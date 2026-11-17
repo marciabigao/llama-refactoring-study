@@ -21,6 +21,8 @@ from _common import config, read_jsonl
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--exclude-canonical-failures", action="store_true")
+ap.add_argument("--exclude-skipped", action="store_true",
+                help="ignora classes com alguma geração pulada por limite de taxa (status skipped_rate_limit)")
 args = ap.parse_args()
 
 config.ensure_dirs()
@@ -33,6 +35,12 @@ if args.exclude_canonical_failures:
     base = read_jsonl(config.CANONICAL_BASELINE)
     excluded = {r["task_id"] for r in base if not r["passed"]}
     print("Excluindo (falham no canônico):", sorted(excluded))
+n_skipped = sum(r["status"] == "skipped_rate_limit" for r in res)
+if n_skipped:
+    print(f"[aviso] {n_skipped} geração(ões) puladas por limite de taxa (contam como falha, a menos que use --exclude-skipped)")
+if args.exclude_skipped:
+    excluded |= {r["task_id"] for r in res if r["status"] == "skipped_rate_limit"}
+    print("Excluindo classes com gerações puladas:", sorted(excluded))
 res = [r for r in res if r["task_id"] not in excluded]
 
 by_task = defaultdict(dict)

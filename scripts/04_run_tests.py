@@ -34,14 +34,15 @@ else:
         raise SystemExit("[erro] rode antes: python scripts/03_parse_and_stats.py")
     for r in parsed:
         jobs.append({"task_id": r["task_id"], "iteration": r["iteration"],
-                     "code": r["code"] if r["parse_ok"] else None, "parse_error": r["error"]})
+                     "code": r["code"] if r["parse_ok"] else None, "parse_error": r["error"],
+                     "skipped": r.get("finish_reason") == "rate_limit_too_large"})
     out_path = config.TESTS_PATH
 
 
 def work(j):
     base = {"task_id": j["task_id"], "iteration": j["iteration"]}
     if j["code"] is None:
-        return {**base, "status": "no_code", "passed": False, "tests_run": 0, "n_failures": 0,
+        return {**base, "status": "skipped_rate_limit" if j.get("skipped") else "no_code", "passed": False, "tests_run": 0, "n_failures": 0,
                 "n_errors": 0, "failures": [{"test": "<parse>", "kind": "error", "message": j.get("parse_error")}]}
     res = run_candidate(tasks[j["task_id"]], j["code"])
     return {**base, **res, "passed": res["status"] == "ok"}

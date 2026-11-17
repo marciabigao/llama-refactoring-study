@@ -19,6 +19,7 @@ import os
 import re
 import time
 import zlib
+from collections import deque
 from datetime import datetime, timezone
 
 from tqdm import tqdm
@@ -29,6 +30,10 @@ from src.prompts import build_system_prompt, build_user_prompt
 
 class FatalError(Exception):
     """Erro que não adianta tentar de novo (chave, modelo, saldo, parâmetro inválido)."""
+
+
+class TooLarge(Exception):
+    """Esta requisição nunca cabe no limite por minuto (Requested > Limit) ou foi barrada muitas vezes seguidas."""
 
 
 class DailyLimit(Exception):
@@ -95,17 +100,25 @@ def call_llm(client, system, user):
         except openai.RateLimitError as e:
             msg = str(e)
             hdr = getattr(getattr(e, "response", None), "headers", {}) or {}
-            if hdr.get("x-ratelimit-remaining-requests-day") == "0" or \
-                    re.search(r"per day|\bTPD\b|\bRPD\b|daily", msg, re.I):
+            per_day = hdr.get("x-ratelimit-remaining-requests-day") == "0" or \
+                re.search(r"per day|\bTPD\b|\bRPD\b|daily", msg, re.I)
+            per_min = re.search(r"per minute|\b[OI]?TPM\b|\bRPM\b", msg)
+            if per_day and not per_min:
                 wait = parse_wait(msg) or header_seconds(hdr, "x-ratelimit-reset-requests-day") or \
                     header_seconds(hdr, "retry-after")
                 raise DailyLimit(f"cota DIÁRIA esgotada: {msg}", wait)
-            if re.search(r"quota|billing|credit|spend", msg, re.I):
+            lim = re.search(r"Limit\s+(\d+),\s*Used\s+(\d+),\s*Requested\s+(\d+)", msg)
+            if per_min and lim and int(lim.group(3)) > int(lim.group(1)):
+                raise TooLarge(f"pedido maior que o limite por minuto inteiro: {msg}")
+            if re.search(r"insufficient (funds|balance|credit)|exceeded your (current )?quota|payment required", msg, re.I):
                 raise FatalError(f"saldo/cota esgotado: {msg}")
+            # qualquer outro 429 (inclui limite por minuto de tokens de entrada/saída): esperar e repetir
             attempt += 1
+            if attempt > 12:
+                raise TooLarge(f"barrado {attempt} vezes seguidas pelo limite por minuto: {msg}")
             wait = parse_wait(msg) or header_seconds(hdr, "retry-after") or 2 ** min(attempt, 6)
             wait = min(wait + 1.0, 120.0)
-            tqdm.write(f"  [429] limite por minuto; aguardando {wait:.0f}s (tentativa {attempt})")
+            tqdm.write(f"  [429 por minuto] aguardando {wait:.0f}s (tentativa {attempt})")
             time.sleep(wait)
         except openai.NotFoundError as e:
             raise FatalError(f"modelo não encontrado ({config.MODEL}). Confira LLM_MODEL no .env. Detalhe: {e}")
@@ -127,6 +140,32 @@ def call_llm(client, system, user):
             raise
 
 
+class Pacer:
+    """Janela deslizante de 60 s p/ respeitar TPM (tokens totais) e OTPM (tokens de saída) sem tomar 429."""
+
+    def __init__(self, tpm, otpm):
+        self.tpm, self.otpm, self.win, self.recent_out = tpm, otpm, deque(), deque(maxlen=5)
+
+    def wait(self, est_in, est_out):
+        if not (self.tpm or self.otpm):
+            return
+        est_out = max(est_out, sum(self.recent_out) / len(self.recent_out) if self.recent_out else 0)
+        while True:
+            now = time.time()
+            while self.win and now - self.win[0][0] > 60:
+                self.win.popleft()
+            tot, out = sum(w[1] for w in self.win), sum(w[2] for w in self.win)
+            fits = (not self.tpm or tot + est_in + est_out <= self.tpm * 0.92) and \
+                   (not self.otpm or out + est_out <= self.otpm * 0.92)
+            if fits or not self.win:   # janela vazia: manda mesmo que estimativa > limite (o servidor decide)
+                return
+            time.sleep(max(0.5, self.win[0][0] + 60 - now + 0.2))
+
+    def record(self, total, out):
+        self.win.append((time.time(), total, out))
+        self.recent_out.append(out)
+
+
 def plan(tasks, ids, n_runs, days):
     """Estima quantos ciclos cabem em `days` dias com a cota diária configurada."""
     measured = []
@@ -143,6 +182,10 @@ def plan(tasks, ids, n_runs, days):
     total = len(ids) * n_runs
     print(f"Modelo: {config.MODEL} | tokens por geração ≈ {tpg:,.0f} ({src})")
     print(f"Pedido: {len(ids)} classes × {n_runs} ciclos = {total} gerações ≈ {total * tpg / 1e6:.2f} M tokens")
+    if config.OTPM_LIMIT:
+        out_total = total * (tpg - (len(build_system_prompt()) / 3.3 + sum(len(tasks[t]["solution_code"]) for t in ids) / len(ids) / 3.3))
+        print(f"Limite por minuto: OTPM={config.OTPM_LIMIT} => saída total ≈ {out_total / 1e3:.0f}k tokens "
+              f"=> ritmo mínimo ≈ {out_total / config.OTPM_LIMIT / 60:.1f} h de relógio (não é o gargalo se couber nos dias)")
     q_tok, q_req = config.DAILY_TOKEN_QUOTA, config.DAILY_REQUEST_QUOTA
     if not q_tok and not q_req:
         print("Sem cota diária configurada (plano pago/ilimitado): o limite passa a ser só a taxa por minuto.")
@@ -196,6 +239,8 @@ def main():
         client = OpenAI(api_key=config.API_KEY, base_url=config.BASE_URL, max_retries=0, timeout=180)
 
     margin = float(os.getenv("RESUME_MARGIN_S", "30"))
+    pacer = Pacer(config.TPM_LIMIT, config.OTPM_LIMIT)
+    skipped = []
     jobs = [(it, tid) for it in range(n_runs) for tid in ids
             if not (config.RAW_DIR / f"{tid}__iter{it}.json").exists()]
     print(f"Modelo: {config.MODEL} | pendentes: {len(jobs)} de {len(ids) * n_runs} | auto-resume: {args.auto_resume}")
@@ -210,8 +255,17 @@ def main():
                         dt = time.time() - last
                         if dt < config.REQUEST_INTERVAL_S:
                             time.sleep(config.REQUEST_INTERVAL_S - dt)
+                        user = build_user_prompt(tasks[tid])
+                        pacer.wait((len(system) + len(user)) / 3.3, 1.6 * len(user) / 3.3 + 60)
                         last = time.time()
-                        resp = call_llm(client, system, build_user_prompt(tasks[tid]))
+                        resp = call_llm(client, system, user)
+                        u = resp.get("usage") or {}
+                        pacer.record(u.get("prompt_tokens", 0) + u.get("completion_tokens", 0), u.get("completion_tokens", 0))
+                    break
+                except TooLarge as e:
+                    skipped.append(f"{tid}#{it}")
+                    tqdm.write(f"  [PULADA] {tid} ciclo {it}: {str(e)[:200]}")
+                    resp = {"text": "", "finish_reason": "rate_limit_too_large", "usage": {}, "error": str(e)[:500]}
                     break
                 except DailyLimit as e:
                     if not args.auto_resume:
@@ -237,6 +291,11 @@ def main():
         print(f"\n[PARADO] {e}\nO progresso está salvo; corrija e rode o script de novo para continuar.")
     except KeyboardInterrupt:
         print("\nInterrompido. Progresso salvo; rode novamente para continuar.")
+    if skipped:
+        print(f"\n[ATENÇÃO] {len(skipped)} geração(ões) PULADA(S) por exceder o limite por minuto do seu plano: {skipped[:10]}"
+              f"{' ...' if len(skipped) > 10 else ''}\n  Elas contam como falha no RQ1 (status 'skipped_rate_limit'); "
+              f"use `05_rq1_metrics.py --exclude-skipped` p/ reportar sem elas e declare isso. "
+              f"Para gerá-las, apague os .json correspondentes em raw/ após subir de plano e rode de novo.")
     done = len(list(config.RAW_DIR.glob("*.json")))
     print(f"Gerações salvas: {done}/{len(ids) * n_runs}")
 

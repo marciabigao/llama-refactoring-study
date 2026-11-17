@@ -19,8 +19,8 @@ PROVIDERS = {
                   "default_model": "accounts/fireworks/models/llama-v3p3-70b-instruct", "interval": 0.5,
                   "daily_tokens": 0, "daily_requests": 0},
     "groq": {"base_url": "https://api.groq.com/openai/v1", "key_env": "GROQ_API_KEY",
-             "default_model": "qwen/qwen3.8-27b", "interval": 12.0,  # plano gratuito Qwen3.8-27B: 30 RPM, 8K TPM, 1K RPD, 200K TPD
-             "daily_tokens": 200_000, "daily_requests": 1000},
+             "default_model": "qwen/qwen3.8-27b", "interval": 2.0,  # plano gratuito Qwen3.8-27B: 30 RPM, 8K TPM, 1K RPD, 200K TPD; OTPM=1000 observado no erro 429 real
+             "daily_tokens": 200_000, "daily_requests": 1000, "tpm": 8000, "otpm": 1000},
 }
 PROVIDER = os.getenv("LLM_PROVIDER", "groq").lower()
 MODEL = (os.getenv("LLM_MODEL") or os.getenv("GROQ_MODEL")
@@ -39,6 +39,9 @@ MAX_TOKENS = 4000
 # Cotas diárias (usadas só pelo planejador --plan; 0 = sem limite). Ajuste no .env se mudar de plano.
 DAILY_TOKEN_QUOTA = int(os.getenv("DAILY_TOKEN_QUOTA") or PROVIDERS.get(PROVIDER, {}).get("daily_tokens", 0))
 DAILY_REQUEST_QUOTA = int(os.getenv("DAILY_REQUEST_QUOTA") or PROVIDERS.get(PROVIDER, {}).get("daily_requests", 0))
+# Limites por MINUTO usados pelo controle de ritmo (0 = desligado). TPM = tokens totais; OTPM = tokens de SAÍDA.
+TPM_LIMIT = int(os.getenv("TPM_LIMIT") or PROVIDERS.get(PROVIDER, {}).get("tpm", 0))
+OTPM_LIMIT = int(os.getenv("OTPM_LIMIT") or PROVIDERS.get(PROVIDER, {}).get("otpm", 0))
 # Modelos de raciocínio (ex.: Qwen3.8): ex. "none" ou "low" p/ não gastar tokens pensando. Vazio = não enviar.
 REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "").strip()
 REQUEST_INTERVAL_S = float(os.getenv("REQUEST_INTERVAL_S") or PROVIDERS.get(PROVIDER, {}).get("interval", 0.5))

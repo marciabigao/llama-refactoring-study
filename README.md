@@ -55,7 +55,8 @@ pip install -r requirements.txt
    GROQ_API_KEY=gsk_...
    LLM_MODEL=qwen/qwen3.8-27b
    N_RUNS=3
-   REQUEST_INTERVAL_S=12
+   REQUEST_INTERVAL_S=2
+   OTPM_LIMIT=1000
    ```
    O código usa o SDK `openai` apontando para a API compatível da Groq. Outros provedores: `LLM_PROVIDER=sambanova|fireworks` (veja o fim do `.env.example`).
 3. `python scripts/00_check_environment.py` faz uma chamada de teste ao modelo (404 = ID errado, 401 = chave inválida, 429 = limite).
@@ -68,6 +69,8 @@ Limites do plano gratuito do `qwen/qwen3.8-27b` na Groq (fontes de terceiros que
 python scripts/02_generate_refactorings.py --plan --days 3     # calcula quantos ciclos cabem
 ```
 Com ~1.400 tokens por geração (estimativa; o `--plan` passa a usar o valor MEDIDO depois de 5 gerações reais) cabem ~136 gerações/dia ⇒ ~400 em 3 dias. **Recomendado: `N_RUNS=3` (300 gerações, ~2,2 dias).** Com 10 ciclos (1.000 gerações) seriam ~7–8 dias.
+**Limite por minuto observado na prática:** o erro 429 real da Groq mostrou `output tokens per minute (OTPM): Limit 1000` na conta. Com ~600 tokens de saída por geração isso dá ~1 geração a cada 36 s (300 gerações ≈ 3 h de relógio): não é o gargalo dos 3 dias, mas o script agora controla o ritmo (`OTPM_LIMIT`/`TPM_LIMIT` no `.env`) para não tomar 429. Se o pedido de uma classe grande nunca couber nesse limite (`Requested` > `Limit`), a geração é **PULADA** (aparece `[ATENÇÃO]` no final), conta como falha (`skipped_rate_limit`) e você pode reportar sem essas classes com `python scripts/05_rq1_metrics.py --exclude-skipped` (declarando isso). Subir para o Dev Tier da Groq remove essa restrição.
+
 Consequências de usar 3 ciclos (declare nos slides): `pass@5` e `pass@10` ficam `n/a` (o script acrescenta `pass@3`); o desvio padrão do TPR usa só 3 pontos; é uma réplica reduzida do protocolo do artigo.
 Para manter os 10 ciclos em < 3 dias a única via é plano pago (ex.: Groq Developer, que segundo fontes de terceiros cobra ~US$ 0,80/M de entrada e ~US$ 4,00/M de saída no Qwen3.8-27B ⇒ ordem de US$ 3 a 4 por 1.000 gerações; confirme preços) ou outro provedor.
 
