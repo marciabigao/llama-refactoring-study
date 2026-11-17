@@ -29,6 +29,14 @@ def parse_response(text: str, finish_reason: str = "stop") -> dict:
         out["error"] = "empty_response"
         return out
 
+    # Modelos de raciocínio (Qwen3.x) podem emitir <think>...</think>; código dentro do raciocínio NÃO conta.
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.S | re.I)
+    if re.search(r"<think>", text, re.I):          # raciocínio não fechado (resposta truncada)
+        text = text[: re.search(r"<think>", text, re.I).start()]
+    if not text.strip():
+        out["error"] = "truncated_no_code_block" if out["truncated"] else "only_reasoning"
+        return out
+
     # --- código ---
     blocks = _PY_RE.findall(text)
     if not blocks:  # fallback: bloco sem linguagem, mas que parece Python

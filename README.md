@@ -1,7 +1,7 @@
-# Refatoração com Llama (Fireworks) × GPT-4o — Itens 1 (Conjunto de Dados) e 2 (RQ1)
+# Refatoração com LLM aberto (Qwen3.8-27B via Groq) × GPT-4o — Itens 1 (Conjunto de Dados) e 2 (RQ1)
 
 Replica a metodologia de *"From Human to Machine Refactoring: Assessing GPT-4's Impact on Python Class Quality and Readability"*
-(Midolo, Tramontana, Di Penta — arXiv 2601.13139) usando um modelo Llama via Fireworks.
+(Midolo, Tramontana, Di Penta — arXiv 2601.13139) usando um modelo Llama via API compatível com OpenAI (Groq).
 
 ## Estrutura
 
@@ -47,17 +47,29 @@ pip install -r requirements.txt
 > `numpy<2` é proposital: os testes do ClassEval usam `np.mat` (removido no NumPy 2).
 > Recomendação de segurança: os scripts executam código gerado por LLM. Rode em venv/WSL/Docker, não em máquina com dados sensíveis.
 
-### 3) Chave e modelo (Fireworks por padrão)
-1. Crie a chave em https://app.fireworks.ai/settings/users/api-keys. O Llama 3.3 70B é *serverless*, pago por token (~US$ 0,90 por 1 M tokens; as 1.000 gerações custam da ordem de poucos dólares). Pode ser necessário adicionar crédito na conta.
-2. `cp .env.example .env` e edite:
+### 3) Chave e modelo (Groq + Qwen3.8-27B, plano gratuito)
+1. Crie a chave em https://console.groq.com/keys.
+2. `cp .env.example .env` e edite (valores recomendados já vêm no exemplo):
    ```
-   LLM_PROVIDER=fireworks
-   FIREWORKS_API_KEY=sua_chave
-   LLM_MODEL=accounts/fireworks/models/llama-v3p3-70b-instruct
+   LLM_PROVIDER=groq
+   GROQ_API_KEY=gsk_...
+   LLM_MODEL=qwen/qwen3.8-27b
+   N_RUNS=3
+   REQUEST_INTERVAL_S=12
    ```
-   No Fireworks o ID do modelo leva o prefixo `accounts/fireworks/models/`. O código usa o SDK `openai` apontando para `https://api.fireworks.ai/inference/v1`; para voltar à Groq basta `LLM_PROVIDER=groq` + `GROQ_API_KEY` + `LLM_MODEL=<id>`.
-3. `python scripts/00_check_environment.py` faz uma chamada de teste ao modelo. Erros: 404 = ID errado, 401 = chave inválida, 402/412 = sem saldo, 429 = limite de taxa.
-   - **Nota de comparabilidade:** na Seção 3.2 o artigo diz "GPT-4o", mas o modelo realmente usado foi `gpt-4o-mini-2024-07-18`. Cite isso nos slides. Cada modelo grava em `results/<modelo>/`, sem misturar.
+   O código usa o SDK `openai` apontando para a API compatível da Groq. Outros provedores: `LLM_PROVIDER=sambanova|fireworks` (veja o fim do `.env.example`).
+3. `python scripts/00_check_environment.py` faz uma chamada de teste ao modelo (404 = ID errado, 401 = chave inválida, 429 = limite).
+4. **Qwen3.8 é modelo de raciocínio híbrido.** O parser ignora blocos `<think>...</think>`. Depois das primeiras gerações, olhe `usage.reasoning_tokens` em `results/<modelo>/raw/*.json`: se for alto (consome sua cota), ponha `LLM_REASONING_EFFORT=none` no `.env`. Se a API recusar o parâmetro (HTTP 400), remova-o.
+5. **Comparabilidade:** o artigo diz "GPT-4o" mas usou `gpt-4o-mini-2024-07-18`; a proposta cita Llama e aqui se usa Qwen (também de pesos abertos): avise o professor e ajuste o texto. Cada modelo grava em `results/<modelo>/`.
+
+### Prazo de 3 dias — o que cabe
+Limites do plano gratuito do `qwen/qwen3.8-27b` na Groq (fontes de terceiros que citam a doc da Groq; confirme em console.groq.com/settings/limits): 30 req/min, 1.000 req/dia, **8.000 tokens/min, 200.000 tokens/dia**. O gargalo é tokens/dia.
+```bash
+python scripts/02_generate_refactorings.py --plan --days 3     # calcula quantos ciclos cabem
+```
+Com ~1.400 tokens por geração (estimativa; o `--plan` passa a usar o valor MEDIDO depois de 5 gerações reais) cabem ~136 gerações/dia ⇒ ~400 em 3 dias. **Recomendado: `N_RUNS=3` (300 gerações, ~2,2 dias).** Com 10 ciclos (1.000 gerações) seriam ~7–8 dias.
+Consequências de usar 3 ciclos (declare nos slides): `pass@5` e `pass@10` ficam `n/a` (o script acrescenta `pass@3`); o desvio padrão do TPR usa só 3 pontos; é uma réplica reduzida do protocolo do artigo.
+Para manter os 10 ciclos em < 3 dias a única via é plano pago (ex.: Groq Developer, que segundo fontes de terceiros cobra ~US$ 0,80/M de entrada e ~US$ 4,00/M de saída no Qwen3.8-27B ⇒ ordem de US$ 3 a 4 por 1.000 gerações; confirme preços) ou outro provedor.
 
 ### 4) Baixar o ClassEval e validar o ambiente de testes
 ```bash
@@ -69,19 +81,22 @@ O 2º comando roda o **código canônico** contra os testes. Deveria passar ~100
 `_50` (espera erro de permissão; como root o arquivo é gravável). Além disso `ClassEval_58` (Minesweeper) é **aleatório/flaky** (~20% de falha mesmo no canônico).
 Registre isso no relatório. No passo 7 você reporta os resultados com e sem essas classes.
 
-### 5) Gerar as 1.000 refatorações
-Primeiro um teste rápido (3 classes × 2 ciclos):
+### 5) Gerar as refatorações
+Teste rápido (3 classes × 2 ciclos):
 ```bash
 python scripts/02_generate_refactorings.py --tasks 3 --runs 2
+python scripts/02_generate_refactorings.py --plan --days 3      # agora com tokens MEDIDOS
 ```
-Depois o experimento completo (retomável; pode interromper com Ctrl+C e rodar de novo):
+Experimento completo, **sem supervisão** (retoma sozinho quando a cota diária zera):
 ```bash
-python scripts/02_generate_refactorings.py
+nohup python scripts/02_generate_refactorings.py --auto-resume > generate.log 2>&1 &
+tail -f generate.log          # acompanhar (Ctrl+C só sai do tail)
 ```
-- Parâmetros fixos como no artigo: `temperature=1.0`, `top_p=1.0`, `max_tokens=4000` , 10 ciclos; prompt de sistema = Seção 3.2 com a lista da Tabela 1; prompt de usuário = código da classe.
-- Ordem **ciclo a ciclo**: se a cota acabar, você já tem ciclos completos (ex.: 6 ciclos × 100 classes).
-- **Limites/erros:** 429 (limite de taxa) é tratado com espera automática; erros de rede têm novas tentativas; saldo esgotado, chave ou modelo inválidos param o script com mensagem clara (o progresso fica salvo). Ajuste `REQUEST_INTERVAL_S` no `.env` se receber muitos 429.
-- Teste do pipeline sem API: `LLM_MODEL=mock` (gera respostas falsas com ~14% de bugs sintéticos; grava em `results/mock/`).
+(Em Windows use WSL, ou `tmux`/`screen` no Linux. O computador precisa ficar ligado e sem suspender.)
+- Parâmetros como no artigo: `temperature=1.0`, `top_p=1.0`, `max_tokens=4000`; prompt de sistema = Seção 3.2 com a Tabela 1; prompt de usuário = código da classe.
+- Ordem **ciclo a ciclo**: a qualquer momento você tem ciclos completos; dá para rodar os passos 03–05 com resultados parciais.
+- 429 por minuto: espera automática (lê o "try again in ..." do servidor). Cota **diária**: com `--auto-resume` dorme até o reset e continua; sem a flag, para com mensagem e você roda de novo depois. Chave/modelo inválidos ou saldo esgotado param com mensagem clara. Tudo é retomável.
+- Teste do pipeline sem API: `LLM_MODEL=mock` (grava em `results/mock/`).
 
 ### 6) Extrair código/lista, Tabela 2 e Figura 1
 ```bash
@@ -98,7 +113,7 @@ python scripts/05_rq1_metrics.py --exclude-canonical-failures   # sem as que fal
 python scripts/06_failure_cases.py --top 5
 ```
 - **Mean/Std TPR:** TPR de cada ciclo = fração das 100 classes que passam em *todos* os testes; média e desvio (amostral, ddof=1) entre ciclos.
-- **pass@1/5/10:** estimador não-viesado de Chen et al. (2021), n=10. Observação: com n=10, pass@1 = Mean TPR por definição; o artigo reporta 0.86 vs 0.844 (diferença provavelmente de arredondamento/definição) — mencione isso na comparação.
+- **pass@k:** estimador não-viesado de Chen et al. (2021) com n = nº de ciclos (10 no artigo). Com menos ciclos, pass@k para k > n sai como `n/a` e é acrescentado pass@n. Observação: com n=10, pass@1 = Mean TPR por definição; o artigo reporta 0.86 vs 0.844 (diferença provavelmente de arredondamento/definição) — mencione isso na comparação.
 - **Consistency:** fração de classes que passam nos 10 ciclos.
 - Gerações sem código extraível contam como **falha** (`no_code`); veja `table3_extra.json` → `status_counts`.
 - `results/<modelo>/tables/table3_comparison_gpt_vs_llama.md` já traz a tabela comparativa (valores do GPT-4o vêm da Tabela 3 do artigo).

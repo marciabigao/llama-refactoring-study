@@ -55,18 +55,20 @@ for it in iters:
     sel = [by_task[t][it]["passed"] for t in tasks if it in by_task[t]]
     tpr_runs.append(float(np.mean(sel)))
 
-# pass@k
+# pass@k  (k do artigo = 1, 5, 10; se houver menos ciclos, acrescenta pass@n com n = nº de ciclos)
+n_min = min(len(v) for v in by_task.values())
+ks = sorted({1, 5, 10} | ({n_min} if n_min >= 2 else set()))
 pk = {}
-for k in (1, 5, 10):
+for k in ks:
     vals = []
     for t in tasks:
         n = len(by_task[t])
         c = sum(r["passed"] for r in by_task[t].values())
         if n >= k:
             vals.append(pass_at_k(n, c, k))
-    pk[k] = float(np.mean(vals)) if vals else float("nan")
+    pk[k] = float(np.mean(vals)) if len(vals) == n_tasks else float("nan")
     if len(vals) < n_tasks:
-        print(f"[aviso] pass@{k}: só {len(vals)}/{n_tasks} tarefas têm >= {k} execuções")
+        print(f"[aviso] pass@{k} indisponível: nem todas as tarefas têm >= {k} execuções (mín. = {n_min})")
 
 # Consistency
 cons = float(np.mean([all(r["passed"] for r in by_task[t].values()) for t in tasks]))
@@ -78,13 +80,15 @@ tc_tpr = (tot_run - tot_bad) / tot_run if tot_run else float("nan")
 
 row = {"Model": config.MODEL, "Mean TPR": round(float(np.mean(tpr_runs)), 3),
        "Std TPR": round(float(np.std(tpr_runs, ddof=1)) if len(tpr_runs) > 1 else 0.0, 3),
-       "pass@1": round(pk[1], 3), "pass@5": round(pk[5], 3), "pass@10": round(pk[10], 3),
+       **{f"pass@{k}": (round(v, 3) if v == v else None) for k, v in pk.items()},
        "Consistency": round(cons, 3)}
 # Valores publicados no artigo (GPT-4o[-mini]) — Tabela 3
 paper = {"Model": "GPT-4o (artigo)", "Mean TPR": 0.844, "Std TPR": 0.01, "pass@1": 0.86,
          "pass@5": 0.88, "pass@10": 0.89, "Consistency": 0.8}
 t3 = pd.DataFrame([row])
 cmp_ = pd.DataFrame([paper, row])
+cmp_ = cmp_[["Model", "Mean TPR", "Std TPR"] + sorted([c for c in cmp_.columns if c.startswith("pass@")], key=lambda c: int(c.split("@")[1])) + ["Consistency"]]
+cmp_ = cmp_.astype(object).where(cmp_.notna(), "n/a")  # pass@k sem ciclos suficientes vira "n/a"
 t3.to_csv(config.TABLES_DIR / "table3_rq1.csv", index=False)
 cmp_.to_csv(config.TABLES_DIR / "table3_comparison_gpt_vs_llama.csv", index=False)
 (config.TABLES_DIR / "table3_comparison_gpt_vs_llama.md").write_text(cmp_.to_markdown(index=False), encoding="utf-8")
