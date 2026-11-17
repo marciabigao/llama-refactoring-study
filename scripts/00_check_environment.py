@@ -1,6 +1,5 @@
-"""Verifica Python, dependências usadas pelos testes do ClassEval, dados NLTK e a chave Groq."""
+"""Verifica Python, dependências usadas pelos testes do ClassEval, dados NLTK e a chave/modelo do provedor."""
 import importlib
-import os
 import sys
 
 from _common import config
@@ -9,7 +8,7 @@ print(f"Python {sys.version.split()[0]} ({sys.executable})")
 if sys.version_info < (3, 10):
     print("[AVISO] use Python >= 3.10")
 
-mods = ["groq", "dotenv", "numpy", "pandas", "matplotlib", "nltk", "gensim", "bs4", "PyPDF2",
+mods = ["openai", "dotenv", "numpy", "pandas", "matplotlib", "tabulate", "nltk", "gensim", "bs4", "PyPDF2",
         "reportlab", "PIL", "openpyxl", "scipy", "jsonlines", "Levenshtein", "func_timeout", "docx"]
 missing = []
 for m in mods:
@@ -20,7 +19,6 @@ for m in mods:
         print(f"  FALTA {m}: {e}")
         missing.append(m)
 
-# Dados NLTK usados por algumas classes do ClassEval (tokenização, stopwords, lemmatização, POS)
 try:
     import nltk
     for pkg in ["punkt", "punkt_tab", "stopwords", "wordnet", "averaged_perceptron_tagger",
@@ -30,23 +28,21 @@ try:
 except Exception as e:  # noqa: BLE001
     print(f"  [AVISO] NLTK: {e}")
 
-print(f"\nModelo configurado: {config.MODEL}")
-key = os.getenv("GROQ_API_KEY", "")
-if config.MODEL == "mock":
+print(f"\nProvedor: {config.PROVIDER} | Modelo: {config.MODEL}")
+if config.PROVIDER == "mock":
     print("Modo MOCK (sem API).")
-elif not key.startswith("gsk_"):
-    print("[ERRO] GROQ_API_KEY ausente/ inválida no .env")
+elif not config.API_KEY:
+    print(f"[ERRO] {config.PROVIDERS[config.PROVIDER]['key_env']} ausente no .env")
 else:
     try:
-        from groq import Groq
-        ids = sorted(m.id for m in Groq(api_key=key).models.list().data)
-        print("Modelos disponíveis na sua conta Groq:")
-        for i in ids:
-            print("   -", i)
-        if config.MODEL not in ids:
-            print(f"[ERRO] '{config.MODEL}' não está na lista. Ajuste GROQ_MODEL no .env.")
+        from openai import OpenAI
+        r = OpenAI(api_key=config.API_KEY, base_url=config.BASE_URL, max_retries=0, timeout=60
+                   ).chat.completions.create(model=config.MODEL, max_tokens=8,
+                                             messages=[{"role": "user", "content": "Say OK"}])
+        print(f"  ok  chamada de teste ao modelo -> {r.choices[0].message.content!r}")
     except Exception as e:  # noqa: BLE001
-        print(f"[ERRO] não consegui listar modelos: {e}")
+        print(f"[ERRO] chamada de teste falhou: {type(e).__name__}: {e}")
+        print("  404 = ID do modelo errado | 401 = chave inválida | 402/412 = sem saldo | 429 = limite")
 
 if missing:
     print("\nInstale o que falta: pip install -r requirements.txt")

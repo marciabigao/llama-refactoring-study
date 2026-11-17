@@ -1,9 +1,9 @@
-"""Tarefas 1.2–1.4 — Gera as refatorações com Llama via Groq.
+"""Tarefas 1.2–1.4 — Gera as refatorações com Llama via API compatível com OpenAI (Fireworks por padrão; Groq opcional).
 
 100 classes x 10 ciclos = 1.000 gerações, com temperature=1.0, top_p=1.0, max_tokens=4000.
 - Ordem: ciclo por ciclo (ciclo 0 em todas as classes, depois ciclo 1...). Se a cota acabar, você já tem ciclos completos.
 - Retomável: gerações já salvas em results/<modelo>/raw/ são puladas. Pode rodar de novo a qualquer momento.
-- GROQ_MODEL=mock gera respostas falsas (código canônico) para testar todo o pipeline sem API.
+- LLM_MODEL=mock gera respostas falsas (código canônico) para testar todo o pipeline sem API.
 
 Uso:
     python scripts/02_generate_refactorings.py                 # tudo
@@ -23,16 +23,15 @@ from _common import config, load_tasks, task_sort_key
 from src.prompts import build_system_prompt, build_user_prompt
 
 
-class DailyLimit(Exception):
-    pass
+class FatalError(Exception):
+    """Erro que não adianta tentar de novo (chave, modelo, saldo, cota diária)."""
 
 
-def parse_wait(msg: str) -> float:
-    m = re.search(r"try again in\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:([\d.]+)s)?", msg)
-    if not m or not any(m.groups()):
-        return 20.0
-    h, mi, s = (float(x) if x else 0.0 for x in m.groups())
-    return h * 3600 + mi * 60 + s
+def retry_after(e, default):
+    try:
+        return float(e.response.headers.get("retry-after"))
+    except (AttributeError, TypeError, ValueError):
+        return default
 
 
 def mock_response(task: dict, it: int) -> dict:
@@ -45,35 +44,43 @@ def mock_response(task: dict, it: int) -> dict:
     return {"text": text, "finish_reason": "stop", "usage": {}}
 
 
-def call_groq(client, system, user):
-    import groq
+def call_llm(client, system, user):
+    import openai
     attempt = 0
     while True:
         try:
             r = client.chat.completions.create(
                 model=config.MODEL,
                 messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-                temperature=config.TEMPERATURE, top_p=config.TOP_P,
-                max_completion_tokens=config.MAX_TOKENS, n=1)
+                temperature=config.TEMPERATURE, top_p=config.TOP_P, max_tokens=config.MAX_TOKENS, n=1)
             ch = r.choices[0]
             u = r.usage
             return {"text": ch.message.content or "", "finish_reason": ch.finish_reason,
                     "usage": {"prompt_tokens": u.prompt_tokens, "completion_tokens": u.completion_tokens}
                     if u else {}}
-        except groq.RateLimitError as e:
+        except openai.RateLimitError as e:
             msg = str(e)
-            if re.search(r"per day|\bTPD\b|\bRPD\b", msg):
-                raise DailyLimit(msg)
-            wait = min(parse_wait(msg) + 1.0, 120.0)
-            tqdm.write(f"  [429] limite por minuto; aguardando {wait:.0f}s")
+            if re.search(r"per day|\bTPD\b|\bRPD\b|quota|billing|credit|spend", msg, re.I):
+                raise FatalError(f"cota/saldo esgotado: {msg}")
+            attempt += 1
+            wait = min(retry_after(e, 2 ** min(attempt, 6)) + 1.0, 120.0)
+            tqdm.write(f"  [429] limite de taxa; aguardando {wait:.0f}s (tentativa {attempt})")
             time.sleep(wait)
-        except (groq.APIConnectionError, groq.APITimeoutError, groq.InternalServerError) as e:
+        except openai.NotFoundError as e:
+            raise FatalError(f"modelo não encontrado ({config.MODEL}). Confira LLM_MODEL no .env. Detalhe: {e}")
+        except (openai.AuthenticationError, openai.PermissionDeniedError) as e:
+            raise FatalError(f"chave inválida ou sem permissão: {e}")
+        except (openai.APIConnectionError, openai.APITimeoutError, openai.InternalServerError) as e:
             attempt += 1
             if attempt > 6:
                 raise
             wait = min(2 ** attempt, 60)
             tqdm.write(f"  [rede/servidor] {type(e).__name__}; tentativa {attempt}, aguardando {wait}s")
             time.sleep(wait)
+        except openai.APIStatusError as e:
+            if e.status_code in (402, 412):
+                raise FatalError(f"conta sem saldo/suspensa (HTTP {e.status_code}): {e}")
+            raise
 
 
 def main():
@@ -90,7 +97,7 @@ def main():
 
     # Guarda os parâmetros do experimento junto com os resultados (reprodutibilidade)
     (config.RESULTS_DIR / "experiment_config.json").write_text(json.dumps({
-        "model": config.MODEL, "temperature": config.TEMPERATURE, "top_p": config.TOP_P,
+        "provider": config.PROVIDER, "model": config.MODEL, "temperature": config.TEMPERATURE, "top_p": config.TOP_P,
         "max_tokens": config.MAX_TOKENS, "n_runs": n_runs, "n_tasks": len(ids),
         "system_prompt": system,
         "user_prompt": "<solution_code da classe do ClassEval>",
@@ -98,11 +105,10 @@ def main():
 
     client = None
     if config.MODEL != "mock":
-        key = os.getenv("GROQ_API_KEY")
-        if not key:
-            raise SystemExit("[erro] defina GROQ_API_KEY no .env")
-        from groq import Groq
-        client = Groq(api_key=key, max_retries=0)  # retries são tratados por nós
+        if not config.API_KEY:
+            raise SystemExit(f"[erro] defina {config.PROVIDERS[config.PROVIDER]['key_env']} no .env")
+        from openai import OpenAI
+        client = OpenAI(api_key=config.API_KEY, base_url=config.BASE_URL, max_retries=0, timeout=180)
 
     jobs = [(it, tid) for it in range(n_runs) for tid in ids
             if not (config.RAW_DIR / f"{tid}__iter{it}.json").exists()]
@@ -117,15 +123,14 @@ def main():
                 if dt < config.REQUEST_INTERVAL_S:
                     time.sleep(config.REQUEST_INTERVAL_S - dt)
                 last = time.time()
-                resp = call_groq(client, system, build_user_prompt(tasks[tid]))
+                resp = call_llm(client, system, build_user_prompt(tasks[tid]))
             rec = {"task_id": tid, "iteration": it, "model": config.MODEL,
                    "timestamp": datetime.now(timezone.utc).isoformat(), **resp}
             tmp = config.RAW_DIR / f".{tid}__iter{it}.tmp"
             tmp.write_text(json.dumps(rec, ensure_ascii=False), encoding="utf-8")
             tmp.replace(config.RAW_DIR / f"{tid}__iter{it}.json")  # escrita atômica
-    except DailyLimit as e:
-        print(f"\n[COTA DIÁRIA ATINGIDA] {e}\nO progresso está salvo. Rode o script de novo quando a cota renovar "
-              f"(ou use um modelo com cota maior).")
+    except FatalError as e:
+        print(f"\n[PARADO] {e}\nO progresso está salvo; corrija e rode o script de novo para continuar.")
     except KeyboardInterrupt:
         print("\nInterrompido. Progresso salvo; rode novamente para continuar.")
     done = len(list(config.RAW_DIR.glob("*.json")))

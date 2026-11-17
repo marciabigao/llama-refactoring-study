@@ -1,7 +1,7 @@
-# Refatoração com Llama (Groq) × GPT-4o — Itens 1 (Conjunto de Dados) e 2 (RQ1)
+# Refatoração com Llama (Fireworks) × GPT-4o — Itens 1 (Conjunto de Dados) e 2 (RQ1)
 
 Replica a metodologia de *"From Human to Machine Refactoring: Assessing GPT-4's Impact on Python Class Quality and Readability"*
-(Midolo, Tramontana, Di Penta — arXiv 2601.13139) usando um modelo Llama via API Groq.
+(Midolo, Tramontana, Di Penta — arXiv 2601.13139) usando um modelo Llama via Fireworks.
 
 ## Estrutura
 
@@ -10,7 +10,7 @@ Replica a metodologia de *"From Human to Machine Refactoring: Assessing GPT-4's 
 requirements.txt
 src/                    config, lista de refatorações (Tabela 1), prompt (Seção 3.2), parser, executor de testes
 scripts/
-  00_check_environment.py     verifica deps, dados NLTK, chave e modelos disponíveis na Groq
+  00_check_environment.py     verifica deps, dados NLTK e faz uma chamada de teste ao modelo
   01_download_classeval.py    [1.1] baixa o ClassEval (100 classes + testes)
   02_generate_refactorings.py [1.2-1.4] 100 classes x 10 ciclos via Groq (retomável)
   03_parse_and_stats.py       [1.5-1.6] extrai código/lista, Tabela 2 e Figura 1
@@ -47,12 +47,17 @@ pip install -r requirements.txt
 > `numpy<2` é proposital: os testes do ClassEval usam `np.mat` (removido no NumPy 2).
 > Recomendação de segurança: os scripts executam código gerado por LLM. Rode em venv/WSL/Docker, não em máquina com dados sensíveis.
 
-### 3) Chave e modelo Groq
-1. Crie a chave em https://console.groq.com/keys (gratuita).
-2. `cp .env.example .env` e edite: `GROQ_API_KEY=gsk_...` e `GROQ_MODEL=...`.
-3. `python scripts/00_check_environment.py` — lista os modelos Llama disponíveis na SUA conta. Use um deles em `GROQ_MODEL`
-   (padrão: `llama-3.3-70b-versatile`; alternativa mais barata/rápida: `llama-3.1-8b-instant`). Catálogo muda: confira https://console.groq.com/docs/models.
-   - **Nota de comparabilidade:** na Seção 3.2 o artigo diz "GPT-4o", mas o modelo realmente usado foi `gpt-4o-mini-2024-07-18`. Cite isso nos slides; para uma comparação mais justa de porte, considere também rodar um Llama menor (cada modelo grava em `results/<modelo>/`, sem misturar).
+### 3) Chave e modelo (Fireworks por padrão)
+1. Crie a chave em https://app.fireworks.ai/settings/users/api-keys. O Llama 3.3 70B é *serverless*, pago por token (~US$ 0,90 por 1 M tokens; as 1.000 gerações custam da ordem de poucos dólares). Pode ser necessário adicionar crédito na conta.
+2. `cp .env.example .env` e edite:
+   ```
+   LLM_PROVIDER=fireworks
+   FIREWORKS_API_KEY=sua_chave
+   LLM_MODEL=accounts/fireworks/models/llama-v3p3-70b-instruct
+   ```
+   No Fireworks o ID do modelo leva o prefixo `accounts/fireworks/models/`. O código usa o SDK `openai` apontando para `https://api.fireworks.ai/inference/v1`; para voltar à Groq basta `LLM_PROVIDER=groq` + `GROQ_API_KEY` + `LLM_MODEL=<id>`.
+3. `python scripts/00_check_environment.py` faz uma chamada de teste ao modelo. Erros: 404 = ID errado, 401 = chave inválida, 402/412 = sem saldo, 429 = limite de taxa.
+   - **Nota de comparabilidade:** na Seção 3.2 o artigo diz "GPT-4o", mas o modelo realmente usado foi `gpt-4o-mini-2024-07-18`. Cite isso nos slides. Cada modelo grava em `results/<modelo>/`, sem misturar.
 
 ### 4) Baixar o ClassEval e validar o ambiente de testes
 ```bash
@@ -73,10 +78,10 @@ Depois o experimento completo (retomável; pode interromper com Ctrl+C e rodar d
 ```bash
 python scripts/02_generate_refactorings.py
 ```
-- Parâmetros fixos como no artigo: `temperature=1.0`, `top_p=1.0`, `max_tokens=4000` (enviado como `max_completion_tokens`), 10 ciclos; prompt de sistema = Seção 3.2 com a lista da Tabela 1; prompt de usuário = código da classe.
+- Parâmetros fixos como no artigo: `temperature=1.0`, `top_p=1.0`, `max_tokens=4000` , 10 ciclos; prompt de sistema = Seção 3.2 com a lista da Tabela 1; prompt de usuário = código da classe.
 - Ordem **ciclo a ciclo**: se a cota acabar, você já tem ciclos completos (ex.: 6 ciclos × 100 classes).
-- **Limites da Groq (tier gratuito):** há limites por minuto (tratados com espera automática) e por **dia** em tokens. 1.000 gerações ≈ 1–2 M de tokens; no 70B gratuito isso pode levar vários dias (o script avisa "COTA DIÁRIA" e para; rode de novo depois). `llama-3.1-8b-instant` tem cota bem maior; o plano pago (on-demand) resolve em ~1 h. Os limites mudam — veja https://console.groq.com/settings/limits.
-- Teste do pipeline sem API: `GROQ_MODEL=mock` (gera respostas falsas com ~14% de bugs sintéticos; grava em `results/mock/`).
+- **Limites/erros:** 429 (limite de taxa) é tratado com espera automática; erros de rede têm novas tentativas; saldo esgotado, chave ou modelo inválidos param o script com mensagem clara (o progresso fica salvo). Ajuste `REQUEST_INTERVAL_S` no `.env` se receber muitos 429.
+- Teste do pipeline sem API: `LLM_MODEL=mock` (gera respostas falsas com ~14% de bugs sintéticos; grava em `results/mock/`).
 
 ### 6) Extrair código/lista, Tabela 2 e Figura 1
 ```bash
