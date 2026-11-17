@@ -1,0 +1,5 @@
+nohup: ignoring input
+Traceback (most recent call last):
+  File "/home/mbigao/projetos/tp3-mes/scripts/02_generate_refactorings.py", line 25, in <module>
+    from tqdm import tqdm
+ModuleNotFoundError: No module named 'tqdm'

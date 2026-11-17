@@ -1,0 +1,12 @@
+{
+  "provider": "groq",
+  "model": "qwen/qwen3.8-27b",
+  "temperature": 1.0,
+  "top_p": 1.0,
+  "max_tokens": 4000,
+  "reasoning_effort": null,
+  "n_runs": 4,
+  "n_tasks": 100,
+  "system_prompt": "You are an AI that responds with source code and natural language. You will be given a Python class. Please apply the following refactorings (if applicable) to the given class.\nRefactorings: Extract Method, Inline Method, Replace Temp with Query, Split Temporary Variable, Remove Assignments to Parameters, Replace Method with Method Object, Encapsulate Field, Encapsulate Collection, Replace Magic Number with Symbolic Constant, Replace Data Value with Object, Self-Encapsulate Field, Decompose Conditional, Consolidate Conditional Expression, Consolidate Duplicate Conditional Fragments, Remove Control Flag, Replace Nested Conditional with Guard Clauses, Introduce Null Object, Add Parameter, Remove Parameter, Separate Query from Modifier, Parameterize Method, Preserve Whole Object, Replace Parameter with Method Call, Replace Parameter with Explicit Methods, Rename Variable, Introduce Explaining Variable, Inline Temp, Remove Dead Code, Replace Loop with Pipeline\nPlease return the refactored class and the list of refactorings applied. The class must be encapsulated in a code block, like this:\n```python\nprint(\"Hello World!\")\n```\nThe list of refactorings must be encapsulated in a text block, like this:\n```text\nRefactoring 1, Refactoring 2, Refactoring 3\n```",
+  "user_prompt": "<solution_code da classe do ClassEval>"
+}
