@@ -1,0 +1,23 @@
+# --- Pipeline (geração + análise) ---
+groq>=0.11.0
+python-dotenv>=1.0
+numpy>=1.26,<2   # <2: os testes do ClassEval usam np.mat (removido no NumPy 2)
+pandas>=2.1,<2.3
+matplotlib>=3.8
+tqdm>=4.66
+
+# --- Dependências exigidas pelos TESTES do ClassEval (as classes usam estas libs) ---
+nltk>=3.8
+gensim>=4.3.3
+beautifulsoup4>=4.12
+bs4
+PyPDF2>=3.0
+reportlab>=4.0
+pillow>=10.0
+openpyxl>=3.1
+scipy>=1.11,<1.14
+jsonlines>=4.0
+levenshtein>=0.25
+func_timeout
+python-docx
+tabulate>=0.9

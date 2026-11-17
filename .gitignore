@@ -1,0 +1,8 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+# Dados brutos pesados podem ser versionados se quiser; por padrão ignoramos os temporários
+tmp/
+.DS_Store
