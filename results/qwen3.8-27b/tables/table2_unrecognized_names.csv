@@ -1,1 +1,184 @@
 Unrecognized (not in Table 1),Count
+Replace Control Flag,3
+Refactorings:,3
+Replace Temporary Variable,3
+but structure improved),2
+Replace Dead Code,2
+Refactoring 1: Extract Method (extracted _generate_permutations from select),1
+Refactoring 2: Extract Method (extracted _generate_all_permutations from select_all),1
+Refactoring 3: Extract Method (extracted _compute_factorial from factorial),1
+Refactoring 4: Replace Loop with Pipeline (replaced loop in count_all with sum generator),1
+Refactoring 5: Replace Loop with Pipeline (replaced loop with list comprehension in select),1
+Refactoring 6: Replace Loop with Pipeline (replaced loop with nested list comprehension in select_all),1
+Refactoring 7: Replace Loop with Pipeline (replaced loop in factorial with recursion),1
+Refactoring 8: Encapsulate Field (made datas a private field with property accessors),1
+Refactoring 9: Replace Nested Conditional with Guard Clauses (simplified count method by removing else block),1
+Refactoring 10: Replace Magic Number with Symbolic Constant (added FULL_ARRANGEMENT_MULTIPLE constant,1
+though not directly used,1
+indicates symbolic naming pattern),1
+Refactoring 11: Introduce Explaining Variable (variable names already clear,1
+Refactoring 12: Self-Encapsulate Field (datas field now accessed via self._datas),1
+Refactoring 13: Separate Query from Modifier (select and select_all are pure queries without side effects),1
+Refactoring 14: Parameterize Method (m parameter in select allows flexible permutation size),1
+Encapsulate Field (self.students -> self._students with property),1
+Replace Magic Number with Symbolic Constant (60 -> FAIL_THRESHOLD),1
+Extract Method (_has_student,1
+_get_courses,1
+_get_course_scores,1
+_calculate_average,1
+_has_failing_course,1
+_get_scores_for_course,1
+_is_better_gpa),1
+Introduce Explaining Variable (in get_course_average,1
+using _get_scores_for_course),1
+Replace Loop with Pipeline (get_all_students_with_fail_course using list comprehension and _has_failing_course),1
+Inline Method (inline the course check and score retrieval in get_course_average),1
+Remove Dead Code (simplify get_gpa logic),1
+Extract Method (convert_to_bytearray extracted from convert_to_ascii and convert_to_utf8),1
+Replace Magic Number with Symbolic Constant (VALID_BINARY_CHARS,1
+BITS_PER_BYTE),1
+Self-Encapsulate Field (binary_string),1
+Replace Temp with Query (simplified percentage calculation with edge case handling),1
+Move Field,1
+Simplify Duplicates within apply_operator,1
+Remove Assignment to Parameter (apply_operator now returns but caller ignores reassignment in some contexts - actually kept return for compatibility),1
+Add Parameter (internal methods take needed stacks),1
+Rename Variable (private methods prefixed with _),1
+Self-Encapsulate Field (operators/precedences moved to class level),1
+Separate Query from Modifier (precedence is a query),1
+Inline Method (not really applicable here),1
+Parameterize Method (internal methods parameterized with stacks),1
+Preserve Whole Object (stacks passed as whole objects),1
+Narrow Catch Clause,1
+Encapsulate Field (customer,1
+cart),1
+Replace Temp with Query (removed __total assignment in __init__ due conflict,1
+but kept property),1
+Extract Method (_calculate_total),1
+Replace Magic Number with Symbolic Constant (defined constants but still used literals in methods to minimize changes,1
+however,1
+constants are defined),1
+Introduce Explaining Variable (not heavily applied,1
+but discount is clear),1
+Replace Nested Conditional with Guard Clauses (due method simplified),1
+Self-Encapsulate Field (customer,1
+cart via getters/setters),1
+Separate Query from Modifier (due() is query,1
+total is query),1
+Simplify Boolean Expression,1
+Mutable State in `calculate`**: `calculate` modifies `self.postfix_stack` (via `prepare` and `reverse`). This makes the class stateful and difficult to reuse or test concurrently,1
+Extract Method: _is_valid_move,1
+_place_mark,1
+_switch_player,1
+_find_winner_in_board,1
+_check_directions_at,1
+_count_consecutive_marks,1
+_is_within_bounds,1
+Replace Data Value with Object: PlayerState enum replaces string literals 'X,1
+O,1
+Encapsulate Field: board_size,1
+board,1
+current_player now private with property accessors,1
+Encapsulate Collection: board property returns a copy to prevent external modification,1
+Introduce Explaining Variable: winner in check_winner,1
+Replace Nested Conditional with Guard Clauses: used implicitly in _is_valid_move and _is_within_bounds,1
+Remove Dead Code: removed unnecessary count increment logic that was redundant,1
+Inline Temp: inlined temp variables where appropriate,1
+Rename Variable: improved naming for clarity (e.g,1
+_board_size,1
+_current_player),1
+Encapsulate Field**: `self.employees` renamed to `self._employees` to indicate private access,1
+Separation of Query from Modifier (via self-encapsulation and private methods),1
+Extract Method (for validation and update logic),1
+Replace Loop with Pipeline (using dict comprehension in list_employees),1
+Introduce Explaining Variable (validated via _has_valid_employee_info),1
+Consolidate Duplicate Conditional Fragments (combining the two loops in update_employee into validation + update),1
+Add Parameter (none removed,1
+Replace Silent Failure with Exception,1
+Add Type Hints,1
+Add Docstrings,1
+Skip Dead Code,1
+Replace Data Value with Object (created Job and Resume classes instead of dicts),1
+Encapsulate Field (added private fields and properties for job_listings and resumes),1
+Replace Magic Number with Symbolic Constant (not much magic numbers,1
+but string comparisons encapsulated in methods),1
+Extract Method (extracted matches_criteria to Job,1
+matches_requirements to Resume),1
+Replace Nested Conditional with Guard Clauses (added validation in remove_job and withdraw_resume),1
+Inline Temp (removed temporary variables in search_jobs and get_job_applicants using list comprehensions),1
+Self-Encapsulate Field (fields now private with property access),1
+Rename Variable (improved variable naming in contexts),1
+Replace Loop with Pipeline (converted for loops to list comprehensions),1
+Encapsulate Collection (returned copies of collections in properties),1
+Consolidate Duplicate Conditional Fragments (combined the criteria matching logic into a single method in Job),1
+Separate Query from Modifier (search_jobs and get_job_applicants are pure queries,1
+post_job and others are modifiers),1
+Use Guard Clauses,1
+Extract Method (clean_sentence,1
+is_valid_word,1
+is_longer),1
+Replace Magic Number with Symbolic Constant (MAX_WORD_LENGTH_SENTINEL),1
+Remove Assignments to Parameters (clean_sentence uses 'processed' instead of reassigning 'sentence'),1
+Decompose Conditional (extracted conditions in find_longest_word),1
+Introduce Explaining Variable (longest_length),1
+Extract Constant,1
+Remove Assignments to Parameters Rename Variable,1
+Decompose Conditional (simplified by using list comprehension which handles the conditional inline),1
+Replace Magic Number with Symbolic Constant - replaced `5` with `self.TOP_N,1
+Extract Class,1
+Replace Loop with Pipeline (partial - using helper methods),1
+Add Parameter (via constants),1
+Remove Dead Code (fixed logic bug where dish not found in menu would still be added),1
+Self-Encapsulate Field (implicit via attribute usage),1
+Remove Dead Code (removed deprecated comments),1
+Rename Variable (page_num to page in loop),1
+Replace Method with Method.Call (implicit via helper),1
+Parameterize Method (implicit),1
+Replace Nested Conditional with Guard Clauses (not applicable,1
+but we extracted methods for clarity),1
+Rename Variable (encapsulated fields),1
+Inline Temp (in heal),1
+Consolidate Duplicate Conditional Fragments (heal clamping),1
+Extract Method (calculate_damage,1
+should_level_up,1
+level_up_xp_required),1
+Simplify gain_exp loop logic (Inline Temp/Decompose Conditional),1
+Replace Nested Conditional with Guard Clauses (simplified loop),1
+Eliminate redundant else in gain_exp (Remove Dead Code / Simplify loop),1
+Refactoring count_words to remove temp variable (Inline Temp),1
+Intro,1
+Replace Temp with Query** - The `create_table_query,1
+insert_query,1
+select_query,1
+and `delete_query` are temporary variables holding SQL strings. These are simple string constants that can be inlined or replaced with a query method,1
+Combine into Multi-variable (via list comprehensions),1
+Delete Dead Code: Removed empty __init__ with pass,1
+Replace Magic Number with Symbolic Constant: Added class constants for TAYLOR_NUM_TERMS,1
+SIN_TOLERANCE,1
+RADIANS_FACTOR,1
+COS_PRECISION,1
+RESULT_PRECISION,1
+Extract Method: Extracted to_radians() method for degree-to-radian conversion used in taylor() and sin(),1
+Introduce Explaining Variable: Renamed variables for clarity (e.g,1
+x_radians,1
+result,1
+term,1
+cos_value),1
+Inline Temporary Variable: Replaced count variable in taylor() with clearer k-based logic,1
+Split Temporary Variable: Improved factorial to handle edge cases and use clearer loop,1
+Replace Nested Conditional with Guard Clauses: Simplified tan() to use guard clause pattern,1
+Rename Variable: Renamed g to result,1
+t to term,1
+a to result in various methods for clarity,1
+Replace Loop with Pipeline: Factorial rewritten using range() for clarity,1
+Preserve Whole Object: Used self.cos(x) and self.sin(x) in tan() to preserve object methods,1
+Encapsulate Field (added SMOOTHING_CONSTANT as class attribute),1
+Rename Variable (a → counts,1
+norm → query_norm,1
+index_2_key_map eliminated),1
+Remove Assignments to Parameters (eliminated reassignment of a),1
+Simplify logic in compute_idf_weight_dict (replaced manual loop with list comprehension and zip),1
+Introduce Explaining Variable (avg_vector_1,1
+avg_vector_2 in n_similarity,1
+query_norm in cosine_similarities),1
+Simplify Conditional,1

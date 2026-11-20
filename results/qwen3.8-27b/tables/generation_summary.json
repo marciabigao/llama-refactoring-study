@@ -1,19 +1,23 @@
 {
   "model": "qwen/qwen3.8-27b",
-  "generations": 6,
-  "parse_ok": 6,
+  "generations": 500,
+  "parse_ok": 500,
   "parse_failed": 0,
-  "truncated_by_max_tokens": 0,
-  "mean_refactorings_per_generation": 4.333333333333333,
-  "median_refactorings_per_generation": 4.5,
-  "generations_with_zero_refactorings": 0,
+  "truncated_by_max_tokens": 1,
+  "mean_refactorings_per_generation": 4.836,
+  "median_refactorings_per_generation": 5.0,
+  "generations_with_zero_refactorings": 11,
   "pct_tasks_by_rounded_mean": {
-    "0": 97.0,
-    "2": 1.0,
-    "5": 1.0,
-    "6": 1.0
+    "2": 5.0,
+    "3": 17.0,
+    "4": 18.0,
+    "5": 25.0,
+    "6": 20.0,
+    "7": 12.0,
+    "8": 2.0,
+    "11": 1.0
   },
-  "total_prompt_tokens": 3246,
-  "total_completion_tokens": 2928,
-  "distinct_unrecognized_names": 0
+  "total_prompt_tokens": 305260,
+  "total_completion_tokens": 294135,
+  "distinct_unrecognized_names": 183
 }

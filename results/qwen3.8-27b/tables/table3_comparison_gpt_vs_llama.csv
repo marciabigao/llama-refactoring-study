@@ -1,0 +1,3 @@
+Model,Mean TPR,Std TPR,pass@1,pass@5,pass@10,Consistency
+GPT-4o (artigo),0.844,0.01,0.86,0.88,0.89,0.8
+qwen/qwen3.8-27b,0.635,0.018,0.635,0.939,n/a,0.245

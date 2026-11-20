@@ -1,0 +1,30 @@
+{
+  "n_tasks": 98,
+  "n_runs": 5,
+  "excluded_tasks": [
+    "ClassEval_17",
+    "ClassEval_48"
+  ],
+  "tpr_per_run": [
+    0.653,
+    0.653,
+    0.622,
+    0.633,
+    0.612
+  ],
+  "std_tpr_ddof0": 0.0163,
+  "testcase_level_tpr": 0.832,
+  "status_counts": {
+    "tests_failed": 174,
+    "ok": 311,
+    "import_error": 5
+  },
+  "tasks_never_passing": [
+    "ClassEval_0",
+    "ClassEval_49",
+    "ClassEval_61",
+    "ClassEval_62",
+    "ClassEval_66",
+    "ClassEval_67"
+  ]
+}

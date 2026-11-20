@@ -1,0 +1,48 @@
+task_id,iteration,failing_tests,diff_lines,claimed_refactorings
+ClassEval_62,3,1,27,Extract Method; Remove Dead Code; Introduce Explaining Variable; Replace Loop with Pipeline
+ClassEval_62,4,1,29,Replace Magic Number with Symbolic Constant; Replace Temp with Query; Replace Loop with Pipeline; Self-Encapsulate Field
+ClassEval_62,1,1,41,Replace Loop with Pipeline
+ClassEval_0,2,1,53,Replace Magic Number with Symbolic Constant; Introduce Explaining Variable; Remove Dead Code; Consolidate Duplicate Conditional Fragments; Replace Loop with Pipeline; Add Parameter; Replace Nested Conditional with Guard Clauses; Remove Control Flag; Encapsulate Collection; Inline Temp; Separate Query from Modifier; Rename Variable; Extract Method; Replace Method with Method Object; Encapsulate Field; Self-Encapsulate Field; Introduce Null Object; Parameterize Method; Preserve Whole Object; Replace Parameter with Method Call; Replace Parameter with Explicit Methods; Replace Data Value with Object; Inline Method; Remove Parameter; Decompose Conditional; Consolidate Conditional Expression; Remove Assignments to Parameters; Split Temporary Variable; Replace Temp with Query
+ClassEval_0,1,1,61,Replace Magic Number with Symbolic Constant; Replace Loop with Pipeline; Replace Nested Conditional with Guard Clauses; Introduce Explaining Variable
+ClassEval_0,0,1,71,Replace Magic Number with Symbolic Constant; Encapsulate Collection; Replace Loop with Pipeline; Extract Method; Inline Temp; Remove Dead Code
+ClassEval_38,4,1,75,Extract Method; Replace Nested Conditional with Guard Clauses; Replace Magic Number with Symbolic Constant; Replace Temp with Query; Introduce Explaining Variable; Decompose Conditional
+ClassEval_89,0,1,78,Extract Method; Replace Temp with Query; Replace Magic Number with Symbolic Constant; Replace Loop with Pipeline; Remove Dead Code; Encapsulate Field; Separate Query from Modifier; Introduce Explaining Variable
+ClassEval_67,3,1,100,Encapsulate Field; Extract Method; Replace Nested Conditional with Guard Clauses; Inline Temp; Replace Loop with Pipeline; Parameterize Method; Separate Query from Modifier; Decompose Conditional; Introduce Null Object; Rename Variable
+ClassEval_95,3,1,100,Extract Method; Encapsulate Field; Replace Magic Number with Symbolic Constant; Replace Nested Conditional with Guard Clauses; Separate Query from Modifier; Introduce Explaining Variable
+ClassEval_0,4,1,108,Replace Magic Number with Symbolic Constant; Remove Dead Code; Replace Nested Conditional with Guard Clauses; Extract Method; Replace Loop with Pipeline; Introduce Explaining Variable
+ClassEval_89,4,1,108,Encapsulate Field; Encapsulate Collection; Extract Method; Replace Magic Number with Symbolic Constant; Remove Control Flag; Introduce Explaining Variable; Split Temporary Variable
+ClassEval_56,0,1,122,Extract Method; Encapsulate Field; Replace Magic Number with Symbolic Constant; Add Parameter; Rename Variable; Inline Method; Separate Query from Modifier; Replace Nested Conditional with Guard Clauses
+ClassEval_62,0,2,28,Replace Magic Number with Symbolic Constant; Remove Dead Code; Inline Temp; Replace Loop with Pipeline; Encapsulate Field
+ClassEval_89,2,2,87,Self-Encapsulate Field; Replace Magic Number with Symbolic Constant; Extract Method; Inline Method; Replace Loop with Pipeline; Remove Dead Code; Introduce Explaining Variable; Replace Nested Conditional with Guard Clauses; Consolidate Duplicate Conditional Fragments; Rename Variable
+ClassEval_66,2,2,101,Extract Method; Replace Magic Number with Symbolic Constant; Remove Dead Code; Inline Method; Rename Variable; Introduce Explaining Variable
+ClassEval_66,3,2,103,Replace Magic Number with Symbolic Constant; Extract Method; Introduce Explaining Variable
+ClassEval_81,2,2,114,Extract Method; Replace Temp with Query; Replace Magic Number with Symbolic Constant; Self-Encapsulate Field; Introduce Explaining Variable; Inline Temp; Remove Assignments to Parameters; Replace Loop with Pipeline
+ClassEval_81,0,2,174,Extract Method; Replace Magic Number with Symbolic Constant; Decompose Conditional; Replace Nested Conditional with Guard Clauses
+ClassEval_65,2,2,208,Extract Method; Replace Magic Number with Symbolic Constant; Replace Nested Conditional with Guard Clauses; Inline Temp; Remove Dead Code; Rename Variable
+ClassEval_13,2,3,32,Extract Method; Encapsulate Collection; Replace Nested Conditional with Guard Clauses
+ClassEval_28,4,3,98,Extract Method; Replace Loop with Pipeline; Decompose Conditional; Inline Temp; Encapsulate Field
+ClassEval_82,4,3,104,Extract Method; Replace Magic Number with Symbolic Constant; Replace Loop with Pipeline; Rename Variable
+ClassEval_9,4,3,135,Extract Method; Self-Encapsulate Field; Replace Magic Number with Symbolic Constant; Rename Variable; Introduce Explaining Variable; Consolidate Duplicate Conditional Fragments; Remove Dead Code
+ClassEval_12,2,3,139,Extract Method; Rename Variable; Replace Magic Number with Symbolic Constant; Replace Data Value with Object; Self-Encapsulate Field; Encapsulate Field; Encapsulate Collection; Decompose Conditional; Replace Nested Conditional with Guard Clauses; Introduce Explaining Variable
+ClassEval_46,3,4,70,Extract Method; Replace Loop with Pipeline
+ClassEval_7,3,4,85,Encapsulate Field; Extract Method; Replace Data Value with Object; Replace Nested Conditional with Guard Clauses; Parameterize Method; Self-Encapsulate Field
+ClassEval_94,2,4,107,Encapsulate Field; Encapsulate Collection; Replace Magic Number with Symbolic Constant; Extract Method; Self-Encapsulate Field; Introduce Explaining Variable; Replace Nested Conditional with Guard Clauses; Separate Query from Modifier; Rename Variable
+ClassEval_15,4,5,54,Encapsulate Field; Extract Method; Remove Dead Code
+ClassEval_15,1,5,56,Encapsulate Field; Extract Method; Replace Loop with Pipeline; Inline Temp
+ClassEval_41,3,5,105,Replace Magic Number with Symbolic Constant
+ClassEval_31,4,5,107,Extract Method; Replace Temp with Query; Introduce Explaining Variable; Replace Nested Conditional with Guard Clauses; Parameterize Method
+ClassEval_73,4,5,118,Extract Method; Replace Magic Number with Symbolic Constant; Self-Encapsulate Field; Replace Temp with Query
+ClassEval_25,1,6,53,Self-Encapsulate Field; Encapsulate Field; Rename Variable; Extract Method; Remove Dead Code; Separate Query from Modifier
+ClassEval_40,2,6,72,Extract Method; Replace Temp with Query; Replace Parameter with Method Call; Replace Magic Number with Symbolic Constant
+ClassEval_93,3,6,77,Replace Magic Number with Symbolic Constant; Extract Method; Replace Loop with Pipeline; Remove Dead Code
+ClassEval_61,4,6,101,Extract Method; Replace Magic Number with Symbolic Constant; Replace Nested Conditional with Guard Clauses; Consolidate Duplicate Conditional Fragments; Separate Query from Modifier; Inline Temp
+ClassEval_40,0,6,133,Encapsulate Field; Replace Magic Number with Symbolic Constant; Extract Method; Replace Method with Method Object; Separate Query from Modifier; Parameterize Method; Remove Parameter; Inline Temp; Introduce Explaining Variable; Decompose Conditional; Consolidate Duplicate Conditional Fragments; Replace Nested Conditional with Guard Clauses
+ClassEval_94,3,8,88,Encapsulate Field; Extract Method; Replace Nested Conditional with Guard Clauses; Replace Loop with Pipeline; Remove Dead Code; Self-Encapsulate Field
+ClassEval_23,4,9,59,Extract Method; Encapsulate Field; Replace Magic Number with Symbolic Constant
+ClassEval_22,0,9,94,Extract Method; Replace Loop with Pipeline; Encapsulate Field; Replace Magic Number with Symbolic Constant; Replace Nested Conditional with Guard Clauses; Introduce Null Object; Rename Variable
+ClassEval_22,4,9,129,Replace Magic Number with Symbolic Constant; Encapsulate Collection; Extract Method; Replace Nested Conditional with Guard Clauses; Introduce Explaining Variable
+ClassEval_97,0,9,146,Extract Method; Replace Magic Number with Symbolic Constant; Replace Data Value with Object; Introduce Explaining Variable; Remove Control Flag; Remove Assignments to Parameters; Replace Loop with Pipeline
+ClassEval_22,3,10,97,Extract Method; Encapsulate Field; Replace Nested Conditional with Guard Clauses; Replace Loop with Pipeline; Rename Variable; Introduce Explaining Variable; Remove Dead Code
+ClassEval_31,2,10,116,Extract Method; Introduce Explaining Variable; Replace Magic Number with Symbolic Constant; Remove Dead Code
+ClassEval_97,4,11,132,Extract Method; Self-Encapsulate Field; Encapsulate Field; Replace Magic Number with Symbolic Constant; Remove Control Flag; Consolidate Conditional Expression; Inline Method
+ClassEval_88,2,15,74,Extract Method; Replace Magic Number with Symbolic Constant; Rename Variable; Replace Loop with Pipeline; Remove Control Flag; Consolidate Conditional Expression; Replace Nested Conditional with Guard Clauses; Split Temporary Variable; Remove Assignments to Parameters

@@ -1,31 +1,31 @@
 | Refactoring                                   |   Count |
 |:----------------------------------------------|--------:|
-| Replace Magic Number with Symbolic Constant   |       5 |
-| Replace Loop with Pipeline                    |       4 |
-| Extract Method                                |       3 |
-| Introduce Explaining Variable                 |       3 |
-| Encapsulate Field                             |       2 |
-| Remove Dead Code                              |       2 |
-| Replace Temp with Query                       |       1 |
-| Split Temporary Variable                      |       1 |
-| Encapsulate Collection                        |       1 |
-| Self-Encapsulate Field                        |       1 |
-| Replace Nested Conditional with Guard Clauses |       1 |
-| Rename Variable                               |       1 |
-| Inline Temp                                   |       1 |
-| Inline Method                                 |       0 |
-| Remove Assignments to Parameters              |       0 |
-| Replace Method with Method Object             |       0 |
-| Replace Data Value with Object                |       0 |
-| Decompose Conditional                         |       0 |
-| Consolidate Conditional Expression            |       0 |
-| Consolidate Duplicate Conditional Fragments   |       0 |
-| Remove Control Flag                           |       0 |
-| Introduce Null Object                         |       0 |
-| Add Parameter                                 |       0 |
-| Remove Parameter                              |       0 |
-| Separate Query from Modifier                  |       0 |
-| Parameterize Method                           |       0 |
-| Preserve Whole Object                         |       0 |
-| Replace Parameter with Method Call            |       0 |
-| Replace Parameter with Explicit Methods       |       0 |
+| Extract Method                                |     427 |
+| Replace Magic Number with Symbolic Constant   |     325 |
+| Encapsulate Field                             |     237 |
+| Introduce Explaining Variable                 |     196 |
+| Replace Nested Conditional with Guard Clauses |     189 |
+| Rename Variable                               |     146 |
+| Replace Loop with Pipeline                    |     122 |
+| Remove Dead Code                              |      97 |
+| Inline Temp                                   |      92 |
+| Self-Encapsulate Field                        |      91 |
+| Replace Temp with Query                       |      82 |
+| Separate Query from Modifier                  |      61 |
+| Encapsulate Collection                        |      50 |
+| Remove Assignments to Parameters              |      44 |
+| Consolidate Duplicate Conditional Fragments   |      44 |
+| Decompose Conditional                         |      42 |
+| Parameterize Method                           |      26 |
+| Remove Control Flag                           |      21 |
+| Split Temporary Variable                      |      20 |
+| Replace Method with Method Object             |      18 |
+| Add Parameter                                 |      17 |
+| Inline Method                                 |      16 |
+| Replace Data Value with Object                |      16 |
+| Consolidate Conditional Expression            |      13 |
+| Introduce Null Object                         |      12 |
+| Remove Parameter                              |       8 |
+| Replace Parameter with Method Call            |       3 |
+| Preserve Whole Object                         |       2 |
+| Replace Parameter with Explicit Methods       |       1 |

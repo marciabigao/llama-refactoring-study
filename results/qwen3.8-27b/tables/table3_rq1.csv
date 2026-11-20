@@ -1,0 +1,2 @@
+Model,Mean TPR,Std TPR,pass@1,pass@5,pass@10,Consistency
+qwen/qwen3.8-27b,0.635,0.018,0.635,0.939,,0.245
