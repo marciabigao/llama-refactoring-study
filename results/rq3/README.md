@@ -25,10 +25,10 @@ O artigo testa só a hipótese "o refatorado é **mais** legível". p = 1,000 si
 | | Canônico | Refatorado | Δ médio (IC 95%) | Melhorou | Piorou | p bilateral | Cliff's δ |
 |---|---|---|---|---|---|---|---|
 | GPT-4o-mini (artigo) | 0,6199 | 0,5959 | −0,0240 [−0,0378; −0,0102] | 29,3% | 70,7% | — (p "maior" = 1,000) | −0,183 |
-| GPT-4o-mini (nosso) | 0,6199 | 0,5959 | −0,0240 [−0,0378; −0,0102] | 29,3% | 70,7% | 0,0001 | −0,183 (small) |
+| GPT-4o-mini (nosso) | 0,6199 | 0,5959 | −0,0240 [−0,0378; −0,0102] | 29,3% | 70,7% | < 0,0001 | −0,183 (small) |
 | Qwen3.8-27B | 0,6199 | 0,6168 | −0,0031 [−0,0158; 0,0095] | 42,4% | 57,6% | 0,344 | −0,087 (negligible) |
 
-- **Qwen × GPT** (Δ por tarefa, Wilcoxon pareado): p = 0,0001. O Qwen perde significativamente menos legibilidade que o GPT.
+- **Qwen × GPT** (Δ por tarefa, Wilcoxon pareado): p < 0,0001. O Qwen perde significativamente menos legibilidade que o GPT.
 - **Só os pares que passaram nos testes** (`table4_readability_passing.md`): GPT Δ = −0,0278 (n = 88 tarefas) e Qwen Δ = −0,0003 (n = 90). A conclusão não muda.
 - **Estabilidade por ciclo** (`rq3_per_iteration.csv`): o GPT piora em todos os 10 ciclos (Δ entre −0,022 e −0,026). O Qwen varia entre +0,003 (ciclo 0) e −0,009 (ciclo 1).
 
