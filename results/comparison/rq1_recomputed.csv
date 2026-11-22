@@ -1,0 +1,6 @@
+model,n_tasks,n_cycles,mean_tpr,std_tpr,pass@1,pass@5,pass@10,consistency,testcase_tpr,never_passing,p_qwen_vs_gpt_5cyc
+"GPT-4o-mini (artigo, 100 tarefas)",100,10,0.844,0.01,0.86,0.88,0.89,0.8,,,
+"GPT-4o-mini (verificação: 100 tarefas, 10 ciclos)",100,10,0.844,0.0107,0.844,0.8755,0.89,0.8,0.9822,11.0,
+GPT-4o-mini (10 ciclos),98,10,0.8612,0.011,0.8612,0.8934,0.9082,0.8163,0.9828,9.0,
+GPT-4o-mini (ciclos 0–4),98,5,0.8633,0.0116,0.8633,0.898,,0.8367,0.9839,10.0,0.0
+Qwen3.8-27B,98,5,0.6347,0.0183,0.6347,0.9388,,0.2449,0.8324,6.0,0.0
