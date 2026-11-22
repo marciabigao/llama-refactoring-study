@@ -1,157 +1,273 @@
-# Refatoração com LLM aberto (Qwen3.8-27B via Groq) × GPT-4o — Conjunto de Dados, RQ1, RQ2 e RQ3
+# Refatoração com LLM aberto: Qwen3.8-27B × GPT-4o-mini
 
-Replica a metodologia de *"From Human to Machine Refactoring: Assessing GPT-4's Impact on Python Class Quality and Readability"*
-(Midolo, Tramontana, Di Penta — arXiv 2601.13139) usando o modelo de pesos abertos Qwen3.8-27B via API compatível com OpenAI (Groq).
+Este repositório replica o estudo *"From Human to Machine Refactoring: Assessing GPT-4's Impact on Python Class Quality and Readability"* (Midolo, Tramontana e Di Penta, [arXiv 2601.13139](https://arxiv.org/abs/2601.13139)), trocando o GPT pelo **Qwen3.8-27B**, um modelo de pesos abertos acessado pela API da Groq. O objetivo é verificar se um modelo aberto alcança resultados comparáveis aos do GPT em correção, qualidade estática e legibilidade.
 
-## Estrutura
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![Modelo](https://img.shields.io/badge/modelo-Qwen3.8--27B%20(Groq)-EB6834)
+![Benchmark](https://img.shields.io/badge/benchmark-ClassEval%20(100%20classes)-555)
 
+---
+
+## Sumário
+
+- [Visão geral](#visão-geral)
+- [Principais resultados](#principais-resultados)
+- [Metodologia](#metodologia)
+- [Estrutura do repositório](#estrutura-do-repositório)
+- [Como reproduzir](#como-reproduzir)
+- [Resultados por pergunta](#resultados-por-pergunta)
+- [Limitações](#limitações)
+
+---
+
+## Visão geral
+
+O artigo original pediu ao GPT para refatorar as **100 classes Python do benchmark [ClassEval](https://github.com/FudanSELab/ClassEval)**, usando um prompt com **29 refatorações do catálogo de Fowler**. Cada classe foi refatorada várias vezes (ciclos), porque a resposta de um LLM muda a cada execução.
+
+Repetimos o mesmo experimento com um modelo aberto e comparamos os dois com **as mesmas ferramentas**:
+
+| | GPT-4o-mini | Qwen3.8-27B |
+|---|---|---|
+| **Tipo** | fechado (OpenAI) | pesos abertos |
+| **Gerações** | 100 classes × 10 ciclos = 1.000 | 100 classes × 5 ciclos = 500 |
+| **De onde vêm** | pacote de replicação dos autores (Zenodo) | gerados por nós, via Groq |
+| **Parâmetros** | não publicados | `temperature=1.0`, `top_p=1.0`, `max_tokens=4000` |
+
+> O texto do artigo diz "GPT-4o", mas o pacote de replicação mostra que o modelo usado foi o `gpt-4o-mini-2024-07-18`. Por isso o chamamos de GPT-4o-mini.
+
+As três perguntas de pesquisa são as mesmas do artigo:
+
+| | Pergunta | Medição | Resultado esperado |
+|---|---|---|---|
+| **RQ1** · Correção | O código refatorado continua funcionando? | testes do ClassEval | passar em todos os testes |
+| **RQ2** · Qualidade | A qualidade estática melhora? | Flake8, Pylint, Lizard e complexidade cognitiva | menos avisos e menos complexidade |
+| **RQ3** · Legibilidade | O código fica mais fácil de ler? | modelo de Scalabrino et al. (nota de 0 a 1) | nota maior que a do original |
+
+---
+
+## Principais resultados
+
+> Nenhum dos modelos é superior em todas as medidas. O GPT-4o-mini é mais confiável numa única tentativa e gera menos código novo. O Qwen3.8-27B acerta com várias tentativas e preserva melhor a legibilidade, mas gera código maior e com mais avisos.
+
+| | Medida | GPT-4o-mini | Qwen3.8-27B | Melhor |
+|---|---|---:|---:|:---:|
+| **RQ1** | Classes que passam em todos os testes, por ciclo | **86,3%** | 63,5% | GPT-4o-mini |
+| **RQ1** | pass@5 (passa em pelo menos 1 de 5 ciclos) | 89,8% | **93,9%** | Qwen3.8-27B |
+| **RQ1** | Consistency (passa nos 5 ciclos) | **83,7%** | 24,5% | GPT-4o-mini |
+| **RQ2** | Complexidade cognitiva, variação média | **−4,12** | −3,01 | GPT-4o-mini |
+| **RQ2** | Linhas de código (NcLOC), variação média | **+2,58** | +12,43 | GPT-4o-mini |
+| **RQ2** | Avisos do Flake8, variação média | **+0,615** | +1,946 | GPT-4o-mini |
+| **RQ2** | Avisos do Pylint, variação média | **+0,044** | +0,542 | GPT-4o-mini |
+| **RQ3** | Nota de legibilidade, variação média | −0,024 | **−0,003** | Qwen3.8-27B |
+
+<sub>RQ1: 98 classes (sem `ClassEval_17` e `ClassEval_48`, que falham até no código original) e ciclos 0–4 nos dois modelos. RQ2 e RQ3: variação = refatorado − original, média por classe. Nas medidas com teste estatístico (Wilcoxon pareado por classe), a diferença entre os modelos é significativa (p < 0,01). Tabela completa: [`results/comparison/comparison_table.md`](results/comparison/comparison_table.md).</sub>
+
+### Síntese
+
+1. **Correção (RQ1):** em uma única tentativa, o GPT-4o-mini preserva o comportamento em mais classes. Considerando 5 tentativas, o Qwen3.8-27B cobre mais classes, porém com baixa consistência: apenas 24,5% passam nos 5 ciclos.
+2. **Qualidade (RQ2):** os dois modelos dividem métodos longos em métodos menores (*Extract Method*), o que reduz a complexidade cognitiva e aumenta a complexidade ciclomática e o tamanho do código. O aumento é maior no Qwen3.8-27B.
+3. **Legibilidade (RQ3):** o GPT-4o-mini reduz a nota de legibilidade de forma significativa (p < 0,0001); a variação do Qwen3.8-27B não é significativa (p = 0,344).
+
+<table>
+<tr>
+<td width="50%"><img src="results/rq2/figures/figure3_delta_boxplots.png" alt="Figura 3: variação de complexidade e tamanho por ciclo"><br><sub><b>Figura 3.</b> Variação de complexidade e tamanho por ciclo (δ &lt; 0 = diminuiu).</sub></td>
+<td width="50%"><img src="results/rq3/figures/figure6_paired_readability.png" alt="Figura 6: legibilidade original × refatorada"><br><sub><b>Figura 6.</b> Legibilidade por classe: abaixo da diagonal, a nota piorou.</sub></td>
+</tr>
+</table>
+
+---
+
+## Metodologia
+
+```mermaid
+flowchart LR
+    A["1. ClassEval<br>100 classes com testes"] --> B["2. Refatoração<br>Qwen3.8-27B, 5 ciclos"]
+    B --> C["3. Códigos refatorados<br>Qwen: 500<br>GPT-4o-mini: 1.000 (pacote do artigo)"]
+    C --> D["4. Medições<br>RQ1: testes<br>RQ2: análise estática<br>RQ3: legibilidade"]
+    D --> E["5. Comparação<br>Wilcoxon pareado<br>Cliff's δ"]
 ```
-.env.example            -> copie para .env (chave Groq, modelo)
-requirements.txt
-src/                    config, lista de refatorações (Tabela 1), prompt (Seção 3.2), parser, executor de testes
-scripts/
-  00_check_environment.py     verifica deps, dados NLTK e faz uma chamada de teste ao modelo
-  01_download_classeval.py    [1.1] baixa o ClassEval (100 classes + testes)
-  02_generate_refactorings.py [1.2-1.4] 100 classes x 10 ciclos via Groq (retomável)
-  03_parse_and_stats.py       [1.5-1.6] extrai código/lista, Tabela 2 e Figura 1
-  04_run_tests.py             [2.1-2.2] roda os testes (--canonical = teste de sanidade do ambiente)
-  05_rq1_metrics.py           [2.3-2.4] Tabela 3 (Mean/Std TPR, pass@k, Consistency) + comparação com o artigo
-  06_failure_cases.py         [2.5] candidatos a "parecia certo, mas mudou o comportamento" (Figura 2)
-  07_get_gpt_package.py       baixa o pacote de replicação do artigo (códigos do GPT-4o-mini, rsm.jar)
-  08_static_analysis.py       [RQ2] Flake8, Pylint, tamanho e complexidade (canônico, Qwen e GPT)
-  09_rq2_stats.py             [RQ2] estatística, Figuras 3 e 4, exemplo da Figura 5
-  10_readability.py           [RQ3] legibilidade (Scalabrino et al.) com o rsm.jar
-  11_rq3_stats.py             [RQ3] Tabela 4, Figura 6, exemplo da Figura 7
-  12_comparison.py            comparação GPT-4o-mini × Qwen (RQ1–RQ3)
-results/<modelo>/...          saídas (tabelas .csv/.md, figuras .png, parsed.jsonl, raw/)
-results/rq2/, rq3/, comparison/  saídas da RQ2, da RQ3 e da comparação (cada pasta tem um README)
-```
 
-## Passo a passo
+1. As 100 classes do ClassEval são a entrada, cada uma com seus testes.
+2. O Qwen3.8-27B recebe cada classe com o prompt do artigo e devolve a versão refatorada, cinco vezes por classe.
+3. Os códigos do Qwen se juntam aos 1.000 códigos do GPT-4o-mini publicados pelos autores.
+4. Os dois conjuntos passam pelas mesmas ferramentas de medição.
+5. Cada métrica é comparada entre o código original e o refatorado, e entre os dois modelos.
 
-### 1) Criar o repositório no GitHub
-1. Instale o Git (https://git-scm.com) e configure uma vez:
-   `git config --global user.name "Seu Nome"` e `git config --global user.email "voce@email.com"`.
-2. No GitHub: **New repository** → nome `llama-refactoring-study` → **Private** (ou Public) → **não** marque README/.gitignore (já existem aqui) → Create.
-3. No terminal, dentro da pasta do projeto:
-   ```bash
-   git init -b main
-   git add .
-   git commit -m "Setup inicial: pipeline de geração e RQ1"
-   git remote add origin https://github.com/SEU_USUARIO/llama-refactoring-study.git
-   git push -u origin main
-   ```
-   (Se pedir senha, use um *Personal Access Token*: GitHub → Settings → Developer settings → Tokens, ou `gh auth login` com o GitHub CLI.)
-4. Confira que `.env` **não** foi enviado (o `.gitignore` já o exclui). Para os colegas: cada um cria o próprio `.env`.
+### Validação do pipeline
 
-### 2) Ambiente Python
-Requer **Python 3.10+** (testado em 3.12).
+Antes da comparação, os scripts foram aplicados aos dados do GPT-4o-mini para confirmar que reproduzem os números do artigo.
+
+| Item | Resultado |
+|---|---|
+| RQ1 (Tabela 3) | Mean TPR 0,844, pass@10 0,890 e Consistency 0,800, iguais ao artigo |
+| Flake8 | contagens por categoria idênticas nos 1.000 códigos do GPT |
+| NcLOC | 100% igual aos valores do pacote |
+| Legibilidade | notas idênticas em 99/99 classes originais e 990/990 códigos do GPT |
+| RQ3 (Tabela 4) | médias, intervalos de confiança e tamanho de efeito reproduzidos |
+| Complexidade | sem acesso ao SonarCloud, calculada com Lizard, `cognitive_complexity` e `ast` |
+
+---
+
+## Estrutura do repositório
+
+| Caminho | O que tem |
+|---|---|
+| [`src/`](src/) | configuração, lista de refatorações (Tabela 1), prompt (Seção 3.2), parser, executor de testes e funções compartilhadas de estatística, análise estática e legibilidade |
+| [`scripts/`](scripts/) | os passos do pipeline, numerados na ordem de execução (tabela abaixo) |
+| [`results/qwen3.8-27b/`](results/qwen3.8-27b/) | gerações do Qwen (`raw/`, `parsed.jsonl`), resultados dos testes, Tabelas 2 e 3, Figura 1 e análise do caso de falha |
+| [`results/rq2/`](results/rq2/) | RQ2: métricas, Figuras 3 e 4, exemplos e [README](results/rq2/README.md) |
+| [`results/rq3/`](results/rq3/) | RQ3: Tabela 4, Figura 6, exemplos e [README](results/rq3/README.md) |
+| [`results/comparison/`](results/comparison/) | comparação GPT-4o-mini × Qwen e limitações ([README](results/comparison/README.md)) |
+| `data/` | ClassEval e o pacote de replicação do artigo (baixados pelos scripts; o pacote não é versionado) |
+
+| Script | Etapa | O que faz |
+|---|---|---|
+| `00_check_environment.py` | setup | verifica dependências e faz uma chamada de teste ao modelo |
+| `01_download_classeval.py` | dados | baixa o ClassEval (100 classes + testes) |
+| `02_generate_refactorings.py` | geração | refatora as classes via Groq (retomável) |
+| `03_parse_and_stats.py` | geração | extrai código e refatorações; Tabela 2 e Figura 1 |
+| `04_run_tests.py` | RQ1 | roda os testes (`--canonical` testa o ambiente) |
+| `05_rq1_metrics.py` | RQ1 | Tabela 3: Mean/Std TPR, pass@k, Consistency |
+| `06_failure_cases.py` | RQ1 | candidatos a falha semântica (Figura 2) |
+| `07_get_gpt_package.py` | dados | baixa o pacote do artigo (códigos do GPT e `rsm.jar`) |
+| `08_static_analysis.py` | RQ2 | Flake8, Pylint, tamanho e complexidade |
+| `09_rq2_stats.py` | RQ2 | estatística, Figuras 3 e 4, exemplo da Figura 5 |
+| `10_readability.py` | RQ3 | legibilidade com o modelo de Scalabrino et al. |
+| `11_rq3_stats.py` | RQ3 | Tabela 4, Figura 6, exemplo da Figura 7 |
+| `12_comparison.py` | comparação | GPT-4o-mini × Qwen nas três perguntas |
+
+---
+
+## Como reproduzir
+
+> As gerações do Qwen e os resultados dos testes já estão no repositório. Para reproduzir apenas as análises da RQ2, da RQ3 e da comparação, que não exigem chave de API, vá direto ao [passo 5](#5-rq2-rq3-e-comparação).
+
+> Os scripts executam código gerado por LLM. Rode em um ambiente isolado (venv, WSL ou Docker), não em uma máquina com dados sensíveis.
+
+### 1. Ambiente
+
+Requer **Python 3.10+** (testado em 3.12) e **Java** no PATH (só para a RQ3).
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
-> `numpy<2` é proposital: os testes do ClassEval usam `np.mat` (removido no NumPy 2).
-> Recomendação de segurança: os scripts executam código gerado por LLM. Rode em venv/WSL/Docker, não em máquina com dados sensíveis.
 
-### 3) Chave e modelo (Groq + Qwen3.8-27B, plano gratuito)
-1. Crie a chave em https://console.groq.com/keys.
-2. `cp .env.example .env` e edite (valores recomendados já vêm no exemplo):
-   ```
-   LLM_PROVIDER=groq
-   GROQ_API_KEY=gsk_...
-   LLM_MODEL=qwen/qwen3.8-27b
-   N_RUNS=3
-   REQUEST_INTERVAL_S=2
-   OTPM_LIMIT=1000
-   ```
-   O código usa o SDK `openai` apontando para a API compatível da Groq. Outros provedores: `LLM_PROVIDER=sambanova|fireworks` (veja o fim do `.env.example`).
-3. `python scripts/00_check_environment.py` faz uma chamada de teste ao modelo (404 = ID errado, 401 = chave inválida, 429 = limite).
-4. **Qwen3.8 é modelo de raciocínio híbrido.** O parser ignora blocos `<think>...</think>`. Depois das primeiras gerações, olhe `usage.reasoning_tokens` em `results/<modelo>/raw/*.json`: se for alto (consome sua cota), ponha `LLM_REASONING_EFFORT=none` no `.env`. Se a API recusar o parâmetro (HTTP 400), remova-o.
-5. **Comparabilidade:** o artigo diz "GPT-4o" mas usou `gpt-4o-mini-2024-07-18`; a proposta cita Llama e aqui se usa Qwen (também de pesos abertos): avise o professor e ajuste o texto. Cada modelo grava em `results/<modelo>/`.
+<sub>`numpy<2` é proposital: os testes do ClassEval usam `np.mat`, removido no NumPy 2.</sub>
 
-### Prazo de 3 dias — o que cabe
-Limites do plano gratuito do `qwen/qwen3.8-27b` na Groq (fontes de terceiros que citam a doc da Groq; confirme em console.groq.com/settings/limits): 30 req/min, 1.000 req/dia, **8.000 tokens/min, 200.000 tokens/dia**. O gargalo é tokens/dia.
+### 2. Chave e modelo
+
+```bash
+cp .env.example .env               # edite e coloque a sua GROQ_API_KEY
+python scripts/00_check_environment.py
+```
+
+O código usa o SDK `openai` apontando para a API compatível da Groq. Valores principais do `.env`: `LLM_PROVIDER=groq`, `LLM_MODEL=qwen/qwen3.8-27b` e `N_RUNS` (número de ciclos; o experimento deste repositório usou **5**).
+
+<details>
+<summary><b>Erros comuns e o modelo de raciocínio</b></summary>
+
+- O `00_check_environment.py` retorna 404 para ID de modelo errado, 401 para chave inválida e 429 para limite atingido.
+- O Qwen3.8 é um modelo de raciocínio híbrido. O parser ignora blocos `<think>...</think>`. Se `usage.reasoning_tokens` em `results/<modelo>/raw/*.json` for alto, use `LLM_REASONING_EFFORT=none` no `.env` (se a API recusar com HTTP 400, remova a opção).
+- Outros provedores: `LLM_PROVIDER=sambanova|fireworks` (veja o fim do `.env.example`).
+
+</details>
+
+<details>
+<summary><b>Limites do plano gratuito da Groq e quantos ciclos cabem</b></summary>
+
+Limites do `qwen/qwen3.8-27b` no plano gratuito (confirme em console.groq.com/settings/limits): 30 requisições/min, 1.000 requisições/dia, 8.000 tokens/min e **200.000 tokens/dia**. O gargalo é a cota diária de tokens.
+
 ```bash
 python scripts/02_generate_refactorings.py --plan --days 3     # calcula quantos ciclos cabem
 ```
-Com ~1.400 tokens por geração (estimativa; o `--plan` passa a usar o valor MEDIDO depois de 5 gerações reais) cabem ~136 gerações/dia ⇒ ~400 em 3 dias. **Recomendado: `N_RUNS=3` (300 gerações, ~2,2 dias).** Com 10 ciclos (1.000 gerações) seriam ~7–8 dias.
-**Limite por minuto observado na prática:** o erro 429 real da Groq mostrou `output tokens per minute (OTPM): Limit 1000` na conta. Com ~600 tokens de saída por geração isso dá ~1 geração a cada 36 s (300 gerações ≈ 3 h de relógio): não é o gargalo dos 3 dias, mas o script agora controla o ritmo (`OTPM_LIMIT`/`TPM_LIMIT` no `.env`) para não tomar 429. Se o pedido de uma classe grande nunca couber nesse limite (`Requested` > `Limit`), a geração é **PULADA** (aparece `[ATENÇÃO]` no final), conta como falha (`skipped_rate_limit`) e você pode reportar sem essas classes com `python scripts/05_rq1_metrics.py --exclude-skipped` (declarando isso). Subir para o Dev Tier da Groq remove essa restrição.
 
-Consequências de usar 3 ciclos (declare nos slides): `pass@5` e `pass@10` ficam `n/a` (o script acrescenta `pass@3`); o desvio padrão do TPR usa só 3 pontos; é uma réplica reduzida do protocolo do artigo.
-Para manter os 10 ciclos em < 3 dias a única via é plano pago (ex.: Groq Developer, que segundo fontes de terceiros cobra ~US$ 0,80/M de entrada e ~US$ 4,00/M de saída no Qwen3.8-27B ⇒ ordem de US$ 3 a 4 por 1.000 gerações; confirme preços) ou outro provedor.
+- Depois de 5 gerações reais, o `--plan` passa a usar os tokens **medidos**.
+- A conta também tem limite de tokens de saída por minuto (`OTPM_LIMIT`). O script controla o ritmo sozinho para não receber erro 429.
+- Se o pedido de uma classe grande nunca couber no limite por minuto, a geração é pulada, conta como falha (`skipped_rate_limit`) e pode ser excluída com `05_rq1_metrics.py --exclude-skipped` (declarando isso).
+- Com menos de 10 ciclos, o pass@10 fica `n/a` e o desvio padrão do TPR usa menos pontos: é uma réplica reduzida do protocolo do artigo.
 
-### 4) Baixar o ClassEval e validar o ambiente de testes
+</details>
+
+### 3. Dados e teste do ambiente
+
 ```bash
 python scripts/01_download_classeval.py
 python scripts/04_run_tests.py --canonical --repeats 5
 ```
-O 2º comando roda o **código canônico** contra os testes. Deveria passar ~100%. Nos meus testes (Linux, root, Python 3.12, numpy 1.26) 5 classes falham por razões do benchmark/ambiente, **não do modelo**:
-`ClassEval_17` (teste depende da data atual), `_31` e `_51` (precisão de ponto flutuante), `_48` (hostname fixo no teste),
-`_50` (espera erro de permissão; como root o arquivo é gravável). Além disso `ClassEval_58` (Minesweeper) é **aleatório/flaky** (~20% de falha mesmo no canônico).
-Registre isso no relatório. No passo 7 você reporta os resultados com e sem essas classes.
 
-### 5) Gerar as refatorações
-Teste rápido (3 classes × 2 ciclos):
-```bash
-python scripts/02_generate_refactorings.py --tasks 3 --runs 2
-python scripts/02_generate_refactorings.py --plan --days 3      # agora com tokens MEDIDOS
-```
-Experimento completo, **sem supervisão** (retoma sozinho quando a cota diária zera):
-```bash
-nohup python scripts/02_generate_refactorings.py --auto-resume > generate.log 2>&1 &
-tail -f generate.log          # acompanhar (Ctrl+C só sai do tail)
-```
-(Em Windows use WSL, ou `tmux`/`screen` no Linux. O computador precisa ficar ligado e sem suspender.)
-- Parâmetros como no artigo: `temperature=1.0`, `top_p=1.0`, `max_tokens=4000`; prompt de sistema = Seção 3.2 com a Tabela 1; prompt de usuário = código da classe.
-- Ordem **ciclo a ciclo**: a qualquer momento você tem ciclos completos; dá para rodar os passos 03–05 com resultados parciais.
-- 429 por minuto: espera automática (lê o "try again in ..." do servidor). Cota **diária**: com `--auto-resume` dorme até o reset e continua; sem a flag, para com mensagem e você roda de novo depois. Chave/modelo inválidos ou saldo esgotado param com mensagem clara. Tudo é retomável.
-- Teste do pipeline sem API: `LLM_MODEL=mock` (grava em `results/mock/`).
+O segundo comando roda o **código original** contra os testes. Algumas classes falham por causa do benchmark ou do ambiente, **não do modelo**:
 
-### 6) Extrair código/lista, Tabela 2 e Figura 1
-```bash
-python scripts/03_parse_and_stats.py
-```
-Saídas em `results/<modelo>/`: `tables/table2_refactoring_counts.csv|md`, `figures/figure1_refactorings_per_task.png`, `tables/generation_summary.json` (estatísticas para os slides: nº de refatorações por geração, truncamentos por `max_tokens`, nomes fora da Tabela 1 = possíveis alucinações, tokens usados).
-Convenções (como no artigo): cada tipo de refatoração conta 1× por geração; a Figura 1 usa a média por tarefa ao longo dos ciclos, arredondada ao inteiro. A lista de refatorações é a **declarada** pelo modelo (não verificada no código).
+| Classe | Motivo |
+|---|---|
+| `ClassEval_17` | o teste depende da data atual |
+| `ClassEval_48` | hostname fixo no teste |
+| `ClassEval_31`, `ClassEval_51` | precisão de ponto flutuante |
+| `ClassEval_50` | espera erro de permissão (como root, o arquivo é gravável) |
+| `ClassEval_58` | aleatório: falha às vezes mesmo no original |
 
-### 7) RQ1: testes, Tabela 3 e caso de falha
-```bash
-python scripts/04_run_tests.py                          # 1.000 execuções de testes
-python scripts/05_rq1_metrics.py                        # todas as 100 classes
-python scripts/05_rq1_metrics.py --exclude-canonical-failures   # sem as que falham no canônico
-python scripts/06_failure_cases.py --top 5
-```
-- **Mean/Std TPR:** TPR de cada ciclo = fração das 100 classes que passam em *todos* os testes; média e desvio (amostral, ddof=1) entre ciclos.
-- **pass@k:** estimador não-viesado de Chen et al. (2021) com n = nº de ciclos (10 no artigo). Com menos ciclos, pass@k para k > n sai como `n/a` e é acrescentado pass@n. Observação: com n=10, pass@1 = Mean TPR por definição; o artigo reporta 0.86 vs 0.844 (diferença provavelmente de arredondamento/definição) — mencione isso na comparação.
-- **Consistency:** fração de classes que passam nos 10 ciclos.
-- Gerações sem código extraível contam como **falha** (`no_code`); veja `table3_extra.json` → `status_counts`.
-- `results/<modelo>/tables/table3_comparison_gpt_vs_llama.md` já traz a tabela comparativa (valores do GPT-4o vêm da Tabela 3 do artigo).
-- `06_failure_cases.py` gera `.md` com diff canônico→Llama, refatorações declaradas e mensagens de asserção. Escolha um caso e preencha a seção "Sua análise" (esse texto é seu — o script só acha candidatos de **falha semântica pura**, sem crash).
+### 4. Gerar as refatorações e rodar a RQ1
 
-### 8) RQ2 e RQ3: qualidade estática e legibilidade
-Não precisam da API nem rodam os testes de novo: usam `parsed.jsonl` e `test_results.jsonl` já gerados.
 ```bash
-pip install -r requirements.txt          # inclui flake8 (+ plugins), pylint, lizard, cognitive_complexity, statsmodels
-python scripts/07_get_gpt_package.py     # pacote do artigo (Zenodo 10.5281/zenodo.17533631, CC-BY 4.0) em data/replication_package/
+python scripts/02_generate_refactorings.py --tasks 3 --runs 2       # teste rápido
+python scripts/02_generate_refactorings.py --auto-resume            # experimento completo
+python scripts/03_parse_and_stats.py                                # Tabela 2 e Figura 1
+python scripts/04_run_tests.py                                      # testes de todas as gerações
+python scripts/05_rq1_metrics.py --exclude-canonical-failures       # Tabela 3
+python scripts/06_failure_cases.py --top 5                          # candidatos a falha semântica
+```
+
+<details>
+<summary><b>Detalhes da geração e das métricas da RQ1</b></summary>
+
+- **Prompt:** prompt de sistema = Seção 3.2 do artigo com as 29 refatorações da Tabela 1; prompt de usuário = código da classe. Configuração completa em [`experiment_config.json`](results/qwen3.8-27b/experiment_config.json).
+- **Ordem ciclo a ciclo:** a qualquer momento há ciclos completos, e os passos 03–05 rodam com resultados parciais.
+- **Retomável:** com `--auto-resume`, o script espera o reset da cota diária e continua. Em Windows, use WSL; no Linux, `nohup`, `tmux` ou `screen`. Para testar sem API, use `LLM_MODEL=mock`.
+- **Refatorações:** cada tipo conta uma vez por geração. A lista é a **declarada** pelo modelo, não verificada no código.
+- **Mean/Std TPR:** em cada ciclo, a fração das classes que passam em todos os testes; média e desvio padrão entre os ciclos.
+- **pass@k:** estimador não viesado de Chen et al. (2021). Com n ciclos, pass@1 = Mean TPR.
+- **Consistency:** fração das classes que passam em todos os ciclos.
+- Gerações sem código extraível contam como **falha** (`no_code`).
+
+</details>
+
+### 5. RQ2, RQ3 e comparação
+
+Não precisam da API nem rodam os testes de novo: usam `parsed.jsonl` e `test_results.jsonl`.
+
+```bash
+python scripts/07_get_gpt_package.py     # pacote do artigo (Zenodo 10.5281/zenodo.17533631, CC-BY 4.0)
 python scripts/08_static_analysis.py     # RQ2: métricas (~3 min)
 python scripts/09_rq2_stats.py           # RQ2: tabelas, Figuras 3 e 4, exemplos
-python scripts/10_readability.py         # RQ3: precisa de Java no PATH (~9 min)
+python scripts/10_readability.py         # RQ3: precisa de Java (~9 min)
 python scripts/11_rq3_stats.py           # RQ3: Tabela 4, Figura 6, exemplos
 python scripts/12_comparison.py          # comparação GPT-4o-mini × Qwen (RQ1–RQ3)
 ```
-- **GPT analisado com as mesmas ferramentas:** os 1.000 códigos do GPT-4o-mini do pacote do artigo passam pelo mesmo pipeline do Qwen. A comparação não depende dos números impressos no artigo.
-- **Validação:** o Flake8 e o NcLOC batem 100% com os dados do pacote; os scores de legibilidade são idênticos aos do artigo (99/99 canônicos, 990/990 do GPT); a Tabela 4 e a Tabela 3 do artigo são reproduzidas (exceto o pass@1, ver `results/comparison/README.md`).
-- **Diferenças em relação ao artigo:** tamanho e complexidade são calculados localmente (Lizard, `cognitive_complexity`, `ast`) em vez do SonarCloud; os dados do artigo têm as contagens Pylint do canônico zeradas por um bug do script deles (detalhes em `results/rq2/README.md`).
-- Os scripts gravam só `task_id`/`iteration`; nenhum caminho local vai para os CSV.
-- Método, resultados e limitações de cada parte: `results/rq2/README.md`, `results/rq3/README.md` e `results/comparison/README.md`.
 
-## O que levar para os slides
-Item 1: `experiment_config.json` (prompt/parâmetros), Tabela 2, Figura 1, `generation_summary.json`.
-Item 2: `table3_comparison_gpt_vs_llama.md`, `table3_extra.json` (TPR por ciclo, falhas por tipo) e o caso de falha semântica (`rq1_failure_case_analysis.md`).
-RQ2: `results/rq2/tables/rq2_summary.md`, Figuras 3 e 4, exemplo da Figura 5 (`results/rq2/examples/ClassEval_57_iter3.md`).
-RQ3: `results/rq3/tables/table4_readability.md`, Figura 6, exemplo da Figura 7 (`results/rq3/examples/ClassEval_64_iter2.md`).
-Comparação: `results/comparison/comparison_table.md` e a lista de limitações em `results/comparison/README.md`.
+<sub>Os scripts gravam só `task_id` e `iteration` nos CSV; nenhum caminho local é salvo.</sub>
 
-## Limitações a declarar
-Testes do ClassEval com falhas de ambiente/aleatoriedade (acima); possível divergência do modelo Llama usado vs. o `gpt-4o-mini` do artigo; amostragem com temperature=1.0 (resultados variam entre execuções); lista de refatorações é autodeclarada pelo modelo. As limitações da RQ2, da RQ3 e da comparação estão em `results/comparison/README.md`.
+---
+
+## Resultados por pergunta
+
+| | Onde ler | Destaques |
+|---|---|---|
+| **RQ1** | [`rq1_failure_case_analysis.md`](results/qwen3.8-27b/rq1_failure_case_analysis.md) | `ClassEval_62`: o Qwen "corrige" um bug que o teste esperava e muda o comportamento |
+| **RQ2** | [`results/rq2/README.md`](results/rq2/README.md) | `ClassEval_57`: avisos do Flake8 caem de 21 para 10 e do Pylint de 23 para 12 |
+| **RQ3** | [`results/rq3/README.md`](results/rq3/README.md) | `ClassEval_64`: correto, mas a nota cai de 0,73 para 0,52 |
+| **Comparação** | [`results/comparison/README.md`](results/comparison/README.md) | método, tabela completa e problemas encontrados nos dados do artigo |
+
+> Refazendo as contas com os dados publicados, encontramos pontos que mudam a leitura de alguns números do artigo, como as contagens de Pylint do código original zeradas por um bug no script dos autores e o p = 1,000 da RQ3, que vem de um teste só na direção de melhora. Os detalhes estão nos READMEs da [RQ2](results/rq2/README.md), da [RQ3](results/rq3/README.md) e da [comparação](results/comparison/README.md).
+
+---
+
+## Limitações
+
+| Desenho da réplica | Medições | Generalização |
+|---|---|---|
+| 5 ciclos no Qwen e 10 no GPT: pass@10 do Qwen = n/a | testes do GPT rodados pelos autores; os do Qwen, pelo grupo | só o ClassEval: 100 classes pequenas e autocontidas |
+| Qwen de 27B comparado ao gpt-4o-mini, não ao GPT-4o | complexidade sem SonarCloud | o benchmark é público e pode estar nos dados de treino |
+| a Groq não fixa a versão do modelo | modelo de legibilidade treinado em Java, usado em Python (como no artigo) | um único modelo aberto e um único prompt |
+
+Lista completa em [`results/comparison/README.md`](results/comparison/README.md).
