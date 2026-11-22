@@ -1,7 +1,7 @@
-# Refatoração com LLM aberto (Qwen3.8-27B via Groq) × GPT-4o — Itens 1 (Conjunto de Dados) e 2 (RQ1)
+# Refatoração com LLM aberto (Qwen3.8-27B via Groq) × GPT-4o — Conjunto de Dados, RQ1, RQ2 e RQ3
 
 Replica a metodologia de *"From Human to Machine Refactoring: Assessing GPT-4's Impact on Python Class Quality and Readability"*
-(Midolo, Tramontana, Di Penta — arXiv 2601.13139) usando um modelo Llama via API compatível com OpenAI (Groq).
+(Midolo, Tramontana, Di Penta — arXiv 2601.13139) usando o modelo de pesos abertos Qwen3.8-27B via API compatível com OpenAI (Groq).
 
 ## Estrutura
 
@@ -17,7 +17,14 @@ scripts/
   04_run_tests.py             [2.1-2.2] roda os testes (--canonical = teste de sanidade do ambiente)
   05_rq1_metrics.py           [2.3-2.4] Tabela 3 (Mean/Std TPR, pass@k, Consistency) + comparação com o artigo
   06_failure_cases.py         [2.5] candidatos a "parecia certo, mas mudou o comportamento" (Figura 2)
+  07_get_gpt_package.py       baixa o pacote de replicação do artigo (códigos do GPT-4o-mini, rsm.jar)
+  08_static_analysis.py       [RQ2] Flake8, Pylint, tamanho e complexidade (canônico, Qwen e GPT)
+  09_rq2_stats.py             [RQ2] estatística, Figuras 3 e 4, exemplo da Figura 5
+  10_readability.py           [RQ3] legibilidade (Scalabrino et al.) com o rsm.jar
+  11_rq3_stats.py             [RQ3] Tabela 4, Figura 6, exemplo da Figura 7
+  12_comparison.py            comparação GPT-4o-mini × Qwen (RQ1–RQ3)
 results/<modelo>/...          saídas (tabelas .csv/.md, figuras .png, parsed.jsonl, raw/)
+results/rq2/, rq3/, comparison/  saídas da RQ2, da RQ3 e da comparação (cada pasta tem um README)
 ```
 
 ## Passo a passo
@@ -122,9 +129,29 @@ python scripts/06_failure_cases.py --top 5
 - `results/<modelo>/tables/table3_comparison_gpt_vs_llama.md` já traz a tabela comparativa (valores do GPT-4o vêm da Tabela 3 do artigo).
 - `06_failure_cases.py` gera `.md` com diff canônico→Llama, refatorações declaradas e mensagens de asserção. Escolha um caso e preencha a seção "Sua análise" (esse texto é seu — o script só acha candidatos de **falha semântica pura**, sem crash).
 
+### 8) RQ2 e RQ3: qualidade estática e legibilidade
+Não precisam da API nem rodam os testes de novo: usam `parsed.jsonl` e `test_results.jsonl` já gerados.
+```bash
+pip install -r requirements.txt          # inclui flake8 (+ plugins), pylint, lizard, cognitive_complexity, statsmodels
+python scripts/07_get_gpt_package.py     # pacote do artigo (Zenodo 10.5281/zenodo.17533631, CC-BY 4.0) em data/replication_package/
+python scripts/08_static_analysis.py     # RQ2: métricas (~3 min)
+python scripts/09_rq2_stats.py           # RQ2: tabelas, Figuras 3 e 4, exemplos
+python scripts/10_readability.py         # RQ3: precisa de Java no PATH (~9 min)
+python scripts/11_rq3_stats.py           # RQ3: Tabela 4, Figura 6, exemplos
+python scripts/12_comparison.py          # comparação GPT-4o-mini × Qwen (RQ1–RQ3)
+```
+- **GPT analisado com as mesmas ferramentas:** os 1.000 códigos do GPT-4o-mini do pacote do artigo passam pelo mesmo pipeline do Qwen. A comparação não depende dos números impressos no artigo.
+- **Validação:** o Flake8 e o NcLOC batem 100% com os dados do pacote; os scores de legibilidade são idênticos aos do artigo (99/99 canônicos, 990/990 do GPT); a Tabela 4 e a Tabela 3 do artigo são reproduzidas (exceto o pass@1, ver `results/comparison/README.md`).
+- **Diferenças em relação ao artigo:** tamanho e complexidade são calculados localmente (Lizard, `cognitive_complexity`, `ast`) em vez do SonarCloud; os dados do artigo têm as contagens Pylint do canônico zeradas por um bug do script deles (detalhes em `results/rq2/README.md`).
+- Os scripts gravam só `task_id`/`iteration`; nenhum caminho local vai para os CSV.
+- Método, resultados e limitações de cada parte: `results/rq2/README.md`, `results/rq3/README.md` e `results/comparison/README.md`.
+
 ## O que levar para os slides
 Item 1: `experiment_config.json` (prompt/parâmetros), Tabela 2, Figura 1, `generation_summary.json`.
-Item 2: `table3_comparison_gpt_vs_llama.md`, `table3_extra.json` (TPR por ciclo, falhas por tipo) e o caso de falha semântica.
+Item 2: `table3_comparison_gpt_vs_llama.md`, `table3_extra.json` (TPR por ciclo, falhas por tipo) e o caso de falha semântica (`rq1_failure_case_analysis.md`).
+RQ2: `results/rq2/tables/rq2_summary.md`, Figuras 3 e 4, exemplo da Figura 5 (`results/rq2/examples/ClassEval_57_iter3.md`).
+RQ3: `results/rq3/tables/table4_readability.md`, Figura 6, exemplo da Figura 7 (`results/rq3/examples/ClassEval_64_iter2.md`).
+Comparação: `results/comparison/comparison_table.md` e a lista de limitações em `results/comparison/README.md`.
 
 ## Limitações a declarar
-Testes do ClassEval com falhas de ambiente/aleatoriedade (acima); possível divergência do modelo Llama usado vs. o `gpt-4o-mini` do artigo; amostragem com temperature=1.0 (resultados variam entre execuções); lista de refatorações é autodeclarada pelo modelo.
+Testes do ClassEval com falhas de ambiente/aleatoriedade (acima); possível divergência do modelo Llama usado vs. o `gpt-4o-mini` do artigo; amostragem com temperature=1.0 (resultados variam entre execuções); lista de refatorações é autodeclarada pelo modelo. As limitações da RQ2, da RQ3 e da comparação estão em `results/comparison/README.md`.

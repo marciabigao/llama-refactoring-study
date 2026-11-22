@@ -152,7 +152,8 @@ def figure7_candidates(df):
         tid, it = r.task_id, int(r.iteration)
         (EXAMPLES / f"{tid}_iter{it}.md").write_text(
             f"# {tid} (iteração {it}): legibilidade {r.canonical:.2f} → {r.readability:.2f} (Δ {r.delta:+.2f})\n\n"
-            f"Testes: passou. Candidato à Figura 7.\n\n## Canônico\n\n```python\n{tasks[tid]['solution_code'].rstrip()}\n```\n\n"
+            "Testes: passou. Candidato à Figura 7.\n\n"
+            f"## Canônico\n\n```python\n{tasks[tid]['solution_code'].rstrip()}\n```\n\n"
             f"## Refatorado pelo Qwen\n\n```python\n{code[(tid, it)].rstrip()}\n```\n", encoding="utf-8", newline="\n")
 
 
