@@ -6,3 +6,8 @@ __pycache__/
 # Dados brutos pesados podem ser versionados se quiser; por padrão ignoramos os temporários
 tmp/
 .DS_Store
+
+# Pacote de replicação do artigo (baixado por scripts/07_get_gpt_package.py)
+data/replication_package/
+data/replication_package.zip
+data/replication_package.part
