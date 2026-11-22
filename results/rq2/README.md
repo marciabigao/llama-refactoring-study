@@ -32,7 +32,7 @@ Na tabela consolidada do pacote (`data/rq2/statistical_reports.csv`), **todas as
 | Complexity (ciclomática) | 12,01 | 14,01 (+2,00) | 15,80 (+3,79) | < 0,001 |
 | Statements | 31,42 | 34,31 (+2,89) | 42,42 (+10,98) | < 0,001 |
 | NcLOC | 34,84 | 37,42 (+2,58) | 47,30 (+12,43) | < 0,001 |
-| Flake8 total | 9,53 | 10,15 (+0,62) | 11,48 (+1,95) | < 0,001 |
+| Flake8 total | 9,53 | 10,145 (+0,615) | 11,48 (+1,95) | < 0,001 |
 | Pylint total | 10,27 | 10,31 (+0,04) | 10,81 (+0,54) | 0,003 |
 
 Pontos para a discussão:

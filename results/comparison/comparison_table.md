@@ -1,0 +1,24 @@
+| rq   | metric                                             | gpt_4o_mini                | qwen3_8_27b                | p_qwen_vs_gpt   | source                                    | note                 |
+|:-----|:---------------------------------------------------|:---------------------------|:---------------------------|:----------------|:------------------------------------------|:---------------------|
+| RQ1  | Mean TPR (ciclos 0–4, 98 tarefas)                  | 0.863                      | 0.635                      | < 0.0001        | results/comparison/rq1_recomputed.csv     |                      |
+| RQ1  | Std TPR (ciclos 0–4)                               | 0.012                      | 0.018                      |                 | results/comparison/rq1_recomputed.csv     |                      |
+| RQ1  | pass@1                                             | 0.863                      | 0.635                      |                 | results/comparison/rq1_recomputed.csv     |                      |
+| RQ1  | pass@5 (5 ciclos)                                  | 0.898                      | 0.939                      |                 | results/comparison/rq1_recomputed.csv     |                      |
+| RQ1  | pass@10                                            | 0.908                      | n/a                        |                 | results/comparison/rq1_recomputed.csv     | Qwen tem só 5 ciclos |
+| RQ1  | Consistency (passa nos 5 ciclos)                   | 0.837                      | 0.245                      |                 | results/comparison/rq1_recomputed.csv     |                      |
+| RQ1  | TPR por caso de teste                              | 0.984                      | 0.832                      |                 | results/comparison/rq1_recomputed.csv     |                      |
+| RQ1  | Tarefas que nunca passam (de 98)                   | 10                         | 6                          |                 | results/comparison/rq1_recomputed.csv     |                      |
+| RQ2  | Cognitive Complexity: δ médio (canônico 11.73)     | -4.119 (r -0.86)           | -3.012 (r -0.55)           | < 0.0001        | results/rq2/tables/rq2_summary.csv        |                      |
+| RQ2  | Complexity (ciclomática): δ médio (canônico 12.01) | +2.004 (r +0.71)           | +3.787 (r +0.80)           | < 0.0001        | results/rq2/tables/rq2_summary.csv        |                      |
+| RQ2  | Statements: δ médio (canônico 31.42)               | +2.887 (r +0.48)           | +10.976 (r +0.81)          | < 0.0001        | results/rq2/tables/rq2_summary.csv        |                      |
+| RQ2  | NcLOC: δ médio (canônico 34.84)                    | +2.580 (r +0.42)           | +12.428 (r +0.82)          | < 0.0001        | results/rq2/tables/rq2_summary.csv        |                      |
+| RQ2  | Flake8 total: δ médio (canônico 9.53)              | +0.615 (r +0.32)           | +1.946 (r +0.63)           | < 0.0001        | results/rq2/tables/rq2_summary.csv        |                      |
+| RQ2  | Pylint total: δ médio (canônico 10.27)             | +0.044 (r +0.13)           | +0.542 (r +0.28)           | 0.0025          | results/rq2/tables/rq2_summary.csv        |                      |
+| RQ2  | PyFlakes: δ médio (canônico 0.06)                  | -0.007 (r -0.16)           | +0.110 (r +0.73)           | < 0.0001        | results/rq2/tables/rq2_summary.csv        |                      |
+| RQ2  | Docstrings (D): δ médio (canônico 6.84)            | +1.200 (r +0.84)           | +1.136 (r +0.78)           | 0.3794          | results/rq2/tables/rq2_summary.csv        |                      |
+| RQ2  | Bugbear (B): δ médio (canônico 0.23)               | -0.226 (r -0.90)           | -0.178 (r -0.81)           | 0.0029          | results/rq2/tables/rq2_summary.csv        |                      |
+| RQ3  | Legibilidade: média (canônico 0.6199)              | 0.5959                     | 0.6168                     |                 | results/rq3/tables/table4_readability.csv |                      |
+| RQ3  | Δ médio [IC 95%]                                   | -0.0240 [-0.0378; -0.0102] | -0.0031 [-0.0158; +0.0095] | < 0.0001        | results/rq3/tables/table4_readability.csv |                      |
+| RQ3  | % melhorou / % piorou                              | 29.3 / 70.7                | 42.4 / 57.6                |                 | results/rq3/tables/table4_readability.csv |                      |
+| RQ3  | Wilcoxon bilateral (refatorado × canônico)         | < 0.0001                   | 0.3442                     |                 | results/rq3/tables/table4_readability.csv |                      |
+| RQ3  | Cliff's δ                                          | -0.183 (small)             | -0.087 (negligible)        |                 | results/rq3/tables/table4_readability.csv |                      |
